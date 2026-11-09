@@ -54,6 +54,7 @@
     if (!files.length) { window.toast?.('공유받은 파일을 읽지 못했어요. 파일 담기로 다시 골라주세요.', true); return; }
     if (files.some(f => f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) && typeof window.setWorkflow === 'function') window.setWorkflow('pdf');
     await window.addFiles?.(files);
+    window.PhotoSokQuick?.open(files);
     if (over) window.toast?.('한 번에 20개까지 받아요. 앞의 20개만 담았어요.', true);
   }
 

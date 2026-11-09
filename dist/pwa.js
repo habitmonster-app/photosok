@@ -33,6 +33,7 @@
     // 사진이 아닌 PDF가 섞여 있으면 PDF로 모으기부터 보여준다.
     if (files.some(f => f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) && typeof window.setWorkflow === 'function') window.setWorkflow('pdf');
     await window.addFiles?.(files);
+    window.PhotoSokQuick?.open(files);
     if (params.get('over')) window.toast?.('한 번에 20개까지 받아요. 앞의 20개만 담았어요.', true);
   }
 

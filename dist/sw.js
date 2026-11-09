@@ -10,7 +10,7 @@ const SHELL_FILES = [
   './', 'index.html', 'licenses.html', 'manifest.webmanifest',
   'style.css', 'document-editor.css', 'file-delivery.css',
   'compress.js', 'pdf.js', 'pdf-tools.js', 'heic-support.js', 'heic-worker.js',
-  'document-editor.js', 'file-delivery.js', 'ui-copy.js', 'app.js', 'submission.js', 'pwa.js', 'native.js', 'home.js', 'fonts/PretendardVariable-subset.woff2',
+  'document-editor.js', 'file-delivery.js', 'ui-copy.js', 'app.js', 'submission.js', 'pwa.js', 'native.js', 'home.js', 'quick.js', 'fonts/PretendardVariable-subset.woff2',
   'assets/brand-mark.svg', 'assets/file-desk.svg', 'assets/inbox.svg',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png'
 ];
