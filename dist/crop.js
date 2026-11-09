@@ -14,13 +14,24 @@
       <div class="crop-stage"><canvas id="cropCanvas" aria-label="자를 영역 미리보기"></canvas></div>
       <p class="crop-size" id="cropSize"></p>
       <label class="crop-zoom"><span>확대</span><input type="range" id="cropZoom" min="100" max="400" value="100" step="1" aria-label="확대"></label>
-      <div class="crop-actions"><button type="button" class="small-button" id="cropReset">가운데로</button><button type="button" class="primary" id="cropApply">이대로 자르기</button></div>`;
+      <p class="crop-face" id="cropFace" hidden></p><div class="crop-actions three"><button type="button" class="small-button" id="cropFaceFit">얼굴에 맞추기</button><button type="button" class="small-button" id="cropReset">가운데로</button><button type="button" class="primary" id="cropApply">이대로 자르기</button></div>`;
     document.body.append(dialog);
     canvas = $('cropCanvas'); ctx = canvas.getContext('2d'); zoomInput = $('cropZoom');
     $('cropClose').onclick = () => dialog.close();
-    $('cropReset').onclick = () => { if (!session) return; Object.assign(session.crop, { x: 0.5, y: 0.5, zoom: 1 }); zoomInput.value = 100; draw(); };
+    $('cropReset').onclick = () => { if (!session) return; session.auto = false; Object.assign(session.crop, { x: 0.5, y: 0.5, zoom: 1 }); zoomInput.value = 100; draw(); };
     $('cropApply').onclick = apply;
-    zoomInput.oninput = () => { if (!session) return; session.crop.zoom = zoomInput.value / 100; draw(); };
+    $('cropFaceFit').onclick = async () => {
+      if (!session) return;
+      const s = session; $('cropFaceFit').disabled = true; $('cropFace').hidden = false; $('cropFace').textContent = '얼굴을 찾고 있어요…';
+      try {
+        const face = s.face || (s.face = await PhotoSokID.faceOf(s.item));
+        if (session !== s) return;
+        const r = PhotoSokID.compute(face, s.w, s.h, PhotoSokID.currentHead());
+        Object.assign(s.crop, r.crop); zoomInput.value = Math.round(s.crop.zoom * 100); s.auto = true; draw();
+      } catch (e) { $('cropFace').textContent = e.message || '얼굴 인식을 쓸 수 없어요.'; }
+      finally { $('cropFaceFit').disabled = false; }
+    };
+    zoomInput.oninput = () => { if (!session) return; session.auto = false; session.crop.zoom = zoomInput.value / 100; draw(); };
     dialog.addEventListener('close', () => { session?.source.close(); session = null; });
     const pointers = new Map();
     let pinch = 0;
@@ -34,6 +45,7 @@
         const ratio = canvas.width / canvas.getBoundingClientRect().width;
         const l = layout();
         const c = session.crop;
+        session.auto = false;
         if (l.overflowX > 0) c.x = Math.min(1, Math.max(0, c.x - (now.x - prev.x) * ratio / l.overflowX));
         if (l.overflowY > 0) c.y = Math.min(1, Math.max(0, c.y - (now.y - prev.y) * ratio / l.overflowY));
         draw();
@@ -50,7 +62,7 @@
     canvas.addEventListener('wheel', e => { if (!session) return; e.preventDefault(); setZoom(session.crop.zoom * (e.deltaY < 0 ? 1.08 : 1 / 1.08)); }, { passive: false });
   }
 
-  function setZoom(z) { session.crop.zoom = Math.min(4, Math.max(1, z)); zoomInput.value = Math.round(session.crop.zoom * 100); draw(); }
+  function setZoom(z) { session.auto = false; session.crop.zoom = Math.min(4, Math.max(1, z)); zoomInput.value = Math.round(session.crop.zoom * 100); draw(); }
   function layout() { const s = session; return PhotoEngine.coverLayout(s.ow, s.oh, canvas.width, canvas.height, s.crop); }
 
   function draw() {
@@ -71,6 +83,7 @@
     for (const f of [1 / 3, 2 / 3]) { line(w * f, 0, w * f, h); line(0, h * f, w, h * f); }
     ctx.strokeStyle = 'rgba(200,240,74,.95)'; ctx.lineWidth = Math.max(2, w / 160); ctx.setLineDash([]); line(w / 2, 0, w / 2, h);
     ctx.restore();
+    if (session.face) { const r = PhotoSokID.check(session.face, session.w, session.h, PhotoSokID.currentHead(), session.crop); $('cropFace').hidden = false; $('cropFace').textContent = r.note; $('cropFace').classList.toggle('warn', !r.ok); }
     const moveX = l.overflowX > 1, moveY = l.overflowY > 1;
     $('cropHint').textContent = moveX && moveY ? '사진을 끌어서 위치를 옮기고, 두 손가락이나 아래 막대로 확대해요.'
       : moveX ? '양옆으로 끌어서 위치를 옮겨요. 확대하면 위아래도 옮길 수 있어요.'
@@ -83,6 +96,8 @@
     if (!session) return;
     const { item, crop } = session;
     item.crop = { x: +crop.x.toFixed(4), y: +crop.y.toFixed(4), zoom: +crop.zoom.toFixed(3) };
+    item.cropAuto = !!session.auto;
+    if (session.face) { const r = PhotoSokID.check(session.face, session.w, session.h, PhotoSokID.currentHead(), item.crop); item.faceNote = (session.auto ? '' : '손으로 맞춤 · ') + r.note; item.faceOk = r.ok; }
     touchItem(item);
     dialog.close();
     render();
@@ -101,11 +116,14 @@
     const ps = Math.min(1, 720 / Math.max(width, height));
     canvas.width = Math.max(1, Math.round(width * ps));
     canvas.height = Math.max(1, Math.round(height * ps));
-    session = { item, source, rotation, ow: quarter ? source.height : source.width, oh: quarter ? source.width : source.height, crop: { x: 0.5, y: 0.5, zoom: 1, ...(item.crop || {}) } };
+    session = { item, source, rotation, w: width, h: height, auto: !!item.cropAuto, face: null, ow: quarter ? source.height : source.width, oh: quarter ? source.width : source.height, crop: { x: 0.5, y: 0.5, zoom: 1, ...(item.crop || {}) } };
     zoomInput.value = Math.round(session.crop.zoom * 100);
     $('cropSize').textContent = '저장 크기 ' + width + ' × ' + height + 'px · 초록 선이 가운데예요';
+    $('cropFace').hidden = true; $('cropFace').classList.remove('warn');
     draw();
     dialog.showModal();
+    const s = session;
+    PhotoSokID.faceOf(item).then(face => { if (session === s) { s.face = face; draw(); } }).catch(() => {});
   }
 
   window.PhotoSokCrop = Object.freeze({ open });
