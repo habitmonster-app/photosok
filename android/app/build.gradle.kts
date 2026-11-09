@@ -22,7 +22,7 @@ android {
         targetSdk = 34
         // CI 빌드 번호를 버전으로: 덮어 설치 가능
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "1.14." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
+        versionName = "1.15." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
     }
 
     signingConfigs {

@@ -526,3 +526,10 @@ footer { border-top: 0; }
 .crop-face { margin: 10px 0 0; padding: 9px 12px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); font-size: 12px; line-height: 1.6; text-align: center; }
 .crop-face.warn { background: rgba(240,160,74,.14); color: #f0a04a; }
 .crop-actions.three { grid-template-columns: auto auto 1fr; }
+.deco-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 14px 0 8px; padding: 4px; border-radius: 12px; background: var(--subtle); }
+.deco-tabs button { min-height: 38px; border: 0; border-radius: 9px; background: none; color: var(--muted); font-size: 13px; font-weight: 600; }
+.deco-tabs button.on { background: var(--panel); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+.crop-zoom.adj { margin: 6px 0; }
+.crop-zoom.adj span { min-width: 46px; font-size: 12px; color: var(--muted); }
+.deco-adj-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.deco-adj-actions .small-button { flex: 1 1 auto; }
