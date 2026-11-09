@@ -10,7 +10,7 @@
 
   const SLIDES = [
     { art: '<div class="ob-big"><s>5.2MB</s><b>480KB</b></div>', title: '원하는 용량으로 딱', text: '100KB, 200KB, 500KB… 고르면 그 이하로 맞춰요. 원본 사진은 그대로 남아요.' },
-    { art: '<div class="ob-icon"><svg><use href="#i-lock"/></svg></div>', title: '사진 접근 권한을 묻지 않아요', text: '고른 사진만 열고, 파일은 휴대폰 밖으로 보내지 않아요. 모든 처리는 기기 안에서 끝나요.' },
+    { art: '<div class="ob-icon"><svg><use href="#i-lock"/></svg></div>', title: '고른 사진만 열어요', text: '줄이기·꾸미기는 사진 접근 권한 없이 써요. 공간 확보를 쓸 때만 갤러리 권한을 물어요. 파일은 휴대폰 밖으로 보내지 않아요.' },
     { art: '<div class="ob-chips"><span>증명사진 규격</span><span>인스타 꾸미기</span><span>개인정보 가리기</span><span>PDF로 모으기</span></div>', title: '제출용부터 인스타까지', text: '자격증·여권 사진, 필터와 글씨, 신분증 가리기까지 한 앱에서 해요.' },
   ];
   const d = document.createElement('dialog');

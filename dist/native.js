@@ -58,6 +58,6 @@
     if (over) window.toast?.('한 번에 20개까지 받아요. 앞의 20개만 담았어요.', true);
   }
 
-  window.PhotoSokApp = Object.freeze({ save, share, receiveShared: over => receiveShared(over).catch(() => window.toast?.('공유받은 파일을 읽지 못했어요.', true)) });
+  window.PhotoSokApp = Object.freeze({ save, share, upload, receiveShared: over => receiveShared(over).catch(() => window.toast?.('공유받은 파일을 읽지 못했어요.', true)) });
   window.addEventListener('load', () => window.PhotoSokApp.receiveShared(false));
 })();

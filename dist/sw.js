@@ -1,7 +1,7 @@
 'use strict';
 // 사진쏙 서비스 워커: 앱을 설치형으로 쓰고, 인터넷 없이도 열리게 한다.
 // 사용자 파일은 외부로 보내지 않는다. 공유로 받은 파일도 이 기기 캐시에 잠깐 두었다가 앱이 꺼내면 지운다.
-const VERSION = 'v1.19.0';
+const VERSION = 'v1.20.0';
 const SHELL = 'photosok-shell-' + VERSION;
 const TOOLS = 'photosok-tools-' + VERSION;
 const INBOX = 'photosok-share-inbox';
@@ -9,7 +9,7 @@ const INBOX = 'photosok-share-inbox';
 const SHELL_FILES = [
   './', 'index.html', 'licenses.html', 'manifest.webmanifest',
   'style.css', 'document-editor.css', 'file-delivery.css',
-  'compress.js', 'crop.js', 'text.js', 'decorate.js', 'face.js', 'idphoto.js', 'mask.js', 'print.js', 'sheet.js', 'onboard.js', 'i18n-en.js', 'i18n.js', 'pdf.js', 'pdf-tools.js', 'heic-support.js', 'heic-worker.js',
+  'compress.js', 'crop.js', 'text.js', 'decorate.js', 'face.js', 'idphoto.js', 'mask.js', 'print.js', 'sheet.js', 'cleanup.js', 'onboard.js', 'i18n-en.js', 'i18n.js', 'pdf.js', 'pdf-tools.js', 'heic-support.js', 'heic-worker.js',
   'document-editor.js', 'file-delivery.js', 'ui-copy.js', 'app.js', 'submission.js', 'pwa.js', 'native.js', 'home.js', 'quick.js', 'fonts/PretendardVariable-subset.woff2',
   'assets/brand-mark.svg', 'assets/file-desk.svg', 'assets/inbox.svg',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png'

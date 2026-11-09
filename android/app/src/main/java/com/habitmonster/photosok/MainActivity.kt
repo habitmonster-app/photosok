@@ -1,6 +1,13 @@
 package com.habitmonster.photosok
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.util.Size
+import androidx.exifinterface.media.ExifInterface
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import android.app.Activity
 import android.content.ClipData
 import android.content.ContentValues
@@ -42,6 +49,8 @@ class MainActivity : Activity() {
         const val PICK = 41
         const val CAMERA = 42
         const val MAX_SHARED = 20
+        const val TRASH = 43
+        const val PERM = 44
     }
 
     private lateinit var web: WebView
@@ -63,6 +72,7 @@ class MainActivity : Activity() {
             .setDomain(HOST)
             .addPathHandler("/www/", AppAssets())
             .addPathHandler("/shared/", WebViewAssetLoader.InternalStoragePathHandler(this, sharedDir))
+            .addPathHandler("/media/", MediaFiles())
             .build()
 
         web = WebView(this)
@@ -210,6 +220,11 @@ class MainActivity : Activity() {
     @Deprecated("Activity result")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == TRASH) {
+            val ok = if (resultCode == RESULT_OK) "true" else "false"
+            web.evaluateJavascript("window.PhotoSokCleanup && PhotoSokCleanup.onTrash($ok)", null)
+            return
+        }
         val callback = chooserCallback ?: return
         chooserCallback = null
         if (resultCode != RESULT_OK) { callback.onReceiveValue(null); return }
@@ -302,6 +317,140 @@ class MainActivity : Activity() {
         return JSONObject().put("status", "saved").put("where", where)
     }
 
+    // ---- 공간 확보: 갤러리 읽기(권한 필요), 줄인 사진 저장, 원본 휴지통 ----
+    private fun cleanupSupported() = Build.VERSION.SDK_INT >= 30
+
+    private fun mediaPermissions(): Array<String> = when {
+        Build.VERSION.SDK_INT >= 34 -> arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+        Build.VERSION.SDK_INT >= 33 -> arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+        else -> arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+    }
+
+    private fun granted(p: String) = checkSelfPermission(p) == PackageManager.PERMISSION_GRANTED
+
+    private fun mediaStatus(): String = when {
+        !cleanupSupported() -> "unsupported"
+        Build.VERSION.SDK_INT >= 33 && granted(Manifest.permission.READ_MEDIA_IMAGES) -> "granted"
+        Build.VERSION.SDK_INT < 33 && granted(Manifest.permission.READ_EXTERNAL_STORAGE) -> "granted"
+        Build.VERSION.SDK_INT >= 34 && granted(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) -> "partial"
+        else -> "denied"
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != PERM) return
+        val status = mediaStatus()
+        // 거절했고 다시 물을 수도 없으면 설정 화면으로 안내한다.
+        val blocked = status == "denied" && !shouldShowRequestPermissionRationale(mediaPermissions()[0])
+        web.evaluateJavascript("window.PhotoSokCleanup && PhotoSokCleanup.onPermission('$status', $blocked)", null)
+    }
+
+    private val imagesUri: Uri get() = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+
+    /** /media/list/big/<최소바이트>.json, /media/list/recent/<개수>.json, /media/thumb/<id>/<px>, /media/full/<id> */
+    private inner class MediaFiles : WebViewAssetLoader.PathHandler {
+        override fun handle(path: String): WebResourceResponse? {
+            if (mediaStatus().let { it != "granted" && it != "partial" }) return WebResourceResponse("text/plain", "utf-8", 403, "Forbidden", null, null)
+            val parts = path.substringBefore('?').split('/')
+            return try {
+                when (parts.getOrNull(0)) {
+                    "list" -> {
+                        val mode = parts.getOrNull(1) ?: "big"
+                        val n = parts.getOrNull(2)?.substringBefore(".json")?.toLongOrNull() ?: 0L
+                        val json = listImages(mode, n).toString()
+                        WebResourceResponse("application/json", "utf-8", ByteArrayInputStream(json.toByteArray()))
+                    }
+                    "thumb" -> {
+                        val id = parts[1].toLong(); val px = (parts.getOrNull(2)?.toIntOrNull() ?: 160).coerceIn(32, 512)
+                        val bmp = contentResolver.loadThumbnail(android.content.ContentUris.withAppendedId(imagesUri, id), Size(px, px), null)
+                        val out = ByteArrayOutputStream(); bmp.compress(Bitmap.CompressFormat.JPEG, 85, out); bmp.recycle()
+                        WebResourceResponse("image/jpeg", null, ByteArrayInputStream(out.toByteArray()))
+                    }
+                    "full" -> {
+                        val uri = android.content.ContentUris.withAppendedId(imagesUri, parts[1].toLong())
+                        WebResourceResponse(contentResolver.getType(uri) ?: "image/jpeg", null, contentResolver.openInputStream(uri))
+                    }
+                    else -> null
+                }
+            } catch (e: Exception) {
+                WebResourceResponse("text/plain", "utf-8", 404, "Not Found", null, null)
+            }
+        }
+    }
+
+    private fun listImages(mode: String, n: Long): JSONArray {
+        val cols = arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.SIZE, MediaStore.Images.Media.WIDTH, MediaStore.Images.Media.HEIGHT,
+            MediaStore.Images.Media.DATE_TAKEN, MediaStore.Images.Media.DATE_MODIFIED, MediaStore.Images.Media.MIME_TYPE,
+            MediaStore.Images.Media.DISPLAY_NAME, MediaStore.Images.Media.RELATIVE_PATH, MediaStore.Images.Media.BUCKET_DISPLAY_NAME, MediaStore.Images.Media.OWNER_PACKAGE_NAME)
+        val big = mode == "big"
+        val selection = if (big) "${MediaStore.Images.Media.SIZE} >= ?" else null
+        val args = if (big) arrayOf(n.toString()) else null
+        val order = if (big) "${MediaStore.Images.Media.SIZE} DESC" else "${MediaStore.Images.Media.DATE_TAKEN} DESC"
+        val limit = if (big) 3000 else n.coerceIn(1, 5000).toInt()
+        val list = JSONArray()
+        contentResolver.query(imagesUri, cols, selection, args, order)?.use { c ->
+            while (c.moveToNext() && list.length() < limit) {
+                val taken = c.getLong(4).takeIf { it > 0 } ?: (c.getLong(5) * 1000)
+                list.put(JSONObject().put("id", c.getLong(0)).put("size", c.getLong(1)).put("w", c.getInt(2)).put("h", c.getInt(3))
+                    .put("date", taken).put("mime", c.getString(6) ?: "").put("name", c.getString(7) ?: "")
+                    .put("path", c.getString(8) ?: "").put("album", c.getString(9) ?: "").put("mine", c.getString(10) == packageName))
+            }
+        }
+        return list
+    }
+
+    private val EXIF_TAGS = arrayOf(
+        ExifInterface.TAG_DATETIME, ExifInterface.TAG_DATETIME_ORIGINAL, ExifInterface.TAG_DATETIME_DIGITIZED,
+        ExifInterface.TAG_OFFSET_TIME, ExifInterface.TAG_OFFSET_TIME_ORIGINAL, ExifInterface.TAG_OFFSET_TIME_DIGITIZED,
+        ExifInterface.TAG_SUBSEC_TIME, ExifInterface.TAG_SUBSEC_TIME_ORIGINAL, ExifInterface.TAG_SUBSEC_TIME_DIGITIZED,
+        ExifInterface.TAG_MAKE, ExifInterface.TAG_MODEL, ExifInterface.TAG_LENS_MAKE, ExifInterface.TAG_LENS_MODEL,
+        ExifInterface.TAG_F_NUMBER, ExifInterface.TAG_EXPOSURE_TIME, ExifInterface.TAG_PHOTOGRAPHIC_SENSITIVITY,
+        ExifInterface.TAG_FOCAL_LENGTH, ExifInterface.TAG_FOCAL_LENGTH_IN_35MM_FILM, ExifInterface.TAG_FLASH,
+        ExifInterface.TAG_WHITE_BALANCE, ExifInterface.TAG_EXPOSURE_BIAS_VALUE, ExifInterface.TAG_METERING_MODE,
+        ExifInterface.TAG_APERTURE_VALUE, ExifInterface.TAG_SHUTTER_SPEED_VALUE, ExifInterface.TAG_BRIGHTNESS_VALUE,
+        ExifInterface.TAG_ARTIST, ExifInterface.TAG_COPYRIGHT, ExifInterface.TAG_IMAGE_DESCRIPTION, ExifInterface.TAG_USER_COMMENT,
+        ExifInterface.TAG_GPS_LATITUDE, ExifInterface.TAG_GPS_LATITUDE_REF, ExifInterface.TAG_GPS_LONGITUDE, ExifInterface.TAG_GPS_LONGITUDE_REF,
+        ExifInterface.TAG_GPS_ALTITUDE, ExifInterface.TAG_GPS_ALTITUDE_REF, ExifInterface.TAG_GPS_TIMESTAMP, ExifInterface.TAG_GPS_DATESTAMP,
+        ExifInterface.TAG_GPS_PROCESSING_METHOD, ExifInterface.TAG_GPS_IMG_DIRECTION, ExifInterface.TAG_GPS_IMG_DIRECTION_REF,
+    )
+
+    /** 줄인 사진(file)을 원본(id)과 같은 앨범에 새 사진으로 넣는다. 찍은 날짜·사진 정보(EXIF)는 원본에서 옮긴다. */
+    private fun storeReplacement(file: File, originalId: Long): JSONObject {
+        val orig = android.content.ContentUris.withAppendedId(imagesUri, originalId)
+        var name = "photo.jpg"; var rel = Environment.DIRECTORY_PICTURES + "/사진쏙/"; var taken = 0L
+        contentResolver.query(orig, arrayOf(MediaStore.Images.Media.DISPLAY_NAME, MediaStore.Images.Media.RELATIVE_PATH, MediaStore.Images.Media.DATE_TAKEN), null, null, null)?.use { c ->
+            if (c.moveToFirst()) {
+                name = c.getString(0) ?: name
+                val p = c.getString(1) ?: ""
+                if (p.startsWith(Environment.DIRECTORY_DCIM + "/") || p.startsWith(Environment.DIRECTORY_PICTURES + "/")) rel = p
+                taken = c.getLong(2)
+            }
+        }
+        runCatching {
+            val src = contentResolver.openInputStream(orig)!!.use { ExifInterface(it) }
+            val dst = ExifInterface(file.absolutePath)
+            for (tag in EXIF_TAGS) src.getAttribute(tag)?.let { dst.setAttribute(tag, it) }
+            dst.setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL.toString())
+            dst.saveAttributes()
+        }
+        val stem = name.substringBeforeLast('.')
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, "${stem}_s.jpg")
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, rel)
+            if (taken > 0) put(MediaStore.Images.Media.DATE_TAKEN, taken)
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+        val uri = contentResolver.insert(imagesUri, values) ?: throw IllegalStateException("insert")
+        try {
+            contentResolver.openOutputStream(uri)!!.use { out -> FileInputStream(file).use { it.copyTo(out) } }
+            contentResolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
+        } catch (e: Exception) {
+            contentResolver.delete(uri, null, null); throw e
+        }
+        return JSONObject().put("status", "saved").put("id", android.content.ContentUris.parseId(uri)).put("size", file.length())
+    }
+
     inner class Bridge {
         @JavascriptInterface
         fun begin(name: String, mime: String): String {
@@ -361,6 +510,59 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun takeShared(): String = synchronized(pendingShared) {
             val list = JSONArray(pendingShared.toList()); pendingShared.clear(); list.toString()
+        }
+    }
+
+        // ---- 공간 확보 ----
+        @JavascriptInterface
+        fun mediaStatus(): String = this@MainActivity.mediaStatus()
+
+        @JavascriptInterface
+        fun requestMedia() {
+            runOnUiThread {
+                if (!cleanupSupported()) web.evaluateJavascript("window.PhotoSokCleanup && PhotoSokCleanup.onPermission('unsupported', false)", null)
+                else requestPermissions(mediaPermissions(), PERM)
+            }
+        }
+
+        @JavascriptInterface
+        fun openAppSettings() {
+            runOnUiThread {
+                runCatching { startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }
+            }
+        }
+
+        /** 업로드한 줄인 사진(uploadId)을 원본(originalId) 자리에 새 사진으로 저장한다. 원본은 아직 그대로다. */
+        @JavascriptInterface
+        fun storeReplacement(uploadId: String, originalId: String): String = try {
+            val file = synchronized(outFiles) { outFiles.remove(uploadId) } ?: throw IllegalStateException("missing")
+            val r = this@MainActivity.storeReplacement(file, originalId.toLong())
+            file.parentFile?.deleteRecursively()
+            r.toString()
+        } catch (e: Exception) {
+            JSONObject().put("status", "failed").toString()
+        }
+
+        /** 사진들을 휴지통으로 보낸다. 안드로이드가 확인 창을 띄우고, 결과는 PhotoSokCleanup.onTrash 로 온다. */
+        @JavascriptInterface
+        fun trash(idsJson: String): String = try {
+            if (!cleanupSupported()) throw IllegalStateException("old")
+            val ids = JSONArray(idsJson)
+            val uris = (0 until ids.length()).map { android.content.ContentUris.withAppendedId(imagesUri, ids.getLong(it)) }
+            if (uris.isEmpty()) throw IllegalStateException("empty")
+            val pi = MediaStore.createTrashRequest(contentResolver, uris, true)
+            runOnUiThread { startIntentSenderForResult(pi.intentSender, TRASH, null, 0, 0, 0) }
+            "asked"
+        } catch (e: Exception) { "failed" }
+
+        /** 이 앱이 만든 사진(줄인 사본)을 지운다. 원본 휴지통 보내기를 취소했을 때 사본이 두 벌로 남지 않게 한다. */
+        @JavascriptInterface
+        fun deleteOwn(idsJson: String): Int {
+            val ids = JSONArray(idsJson); var n = 0
+            for (i in 0 until ids.length()) runCatching {
+                n += contentResolver.delete(android.content.ContentUris.withAppendedId(imagesUri, ids.getLong(i)), null, null)
+            }
+            return n
         }
     }
 }

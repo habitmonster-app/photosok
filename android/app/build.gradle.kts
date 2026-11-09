@@ -22,7 +22,7 @@ android {
         targetSdk = 34
         // CI 빌드 번호를 버전으로: 덮어 설치 가능
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "1.19." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
+        versionName = "1.20." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
     }
 
     signingConfigs {
@@ -53,4 +53,5 @@ tasks.named("preBuild") { dependsOn(copyWeb) }
 dependencies {
     implementation("androidx.webkit:webkit:1.11.0")
     implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
 }
