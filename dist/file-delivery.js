@@ -202,6 +202,16 @@
   async function save(blob, requestedName) {
     if (!validBlob(blob)) return { status: 'failed', method: 'none', message: '저장할 파일이 없어요. 다시 처리해주세요.' };
     const name = sanitizeName(requestedName, blob.type);
+    if (window.PhotoSokApp) {
+      // 안드로이드 앱: 갤러리(사진) 또는 다운로드 폴더(PDF·ZIP)에 바로 저장하고 결과를 확인한다.
+      try {
+        const result = await window.PhotoSokApp.save(blob, name);
+        if (result.status === 'saved') return { status: 'saved', method: 'app', name, where: result.where, message: result.where + '에 저장했어요.' };
+        return { status: 'failed', method: 'app', name, message: result.message || '저장하지 못했어요. 다시 시도해주세요.' };
+      } catch (_) {
+        return { status: 'failed', method: 'app', name, message: '저장하지 못했어요. 저장 공간을 확인하고 다시 시도해주세요.' };
+      }
+    }
     const pickerAvailable = typeof window.showSaveFilePicker === 'function' &&
       window.isSecureContext && (!navigator.userActivation || navigator.userActivation.isActive);
     if (pickerAvailable) {

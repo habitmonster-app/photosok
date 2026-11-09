@@ -37,6 +37,7 @@
   }
 
   window.addEventListener('load', () => {
+    if (window.PhotoSokNative) return; // 안드로이드 앱 안에서는 native.js가 맡는다
     takeSharedFiles().catch(() => window.toast?.('공유받은 파일을 읽지 못했어요.', true));
     if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
     // 처음 설치될 때는 새로고침하지 않는다(담던 파일이 사라지지 않게). 사용자가 '새로 열기'를 누른 경우만 다시 연다.

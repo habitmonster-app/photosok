@@ -74,7 +74,9 @@ async function sharePdf() {
 }
 async function savePdf() {
  if (!pdfState.result || state.busy) return;
- await FileDelivery.save(pdfState.result.blob, pdfFileName());
+ const saved = await FileDelivery.save(pdfState.result.blob, pdfFileName());
+ if (saved?.status === 'saved') toast(saved.message || 'PDF를 저장했어요.');
+ else if (saved?.status === 'failed') toast(saved.message || 'PDF를 저장하지 못했어요. 다시 시도해주세요.', true);
 }
 function setWorkflow(mode) {
  if (state.busy) return;
