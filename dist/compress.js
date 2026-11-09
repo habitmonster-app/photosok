@@ -270,7 +270,7 @@
     const extensions = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heif', 'image/avif': 'avif' };
     const originalExt = name.includes('.') ? name.split('.').pop() : '';
     const ext = result.unchanged && originalExt ? originalExt : (extensions[result.mime || result.blob?.type] || 'jpg');
-    return `${base}_사진쏙.${ext}`;
+    return `${base}_${window.PhotoSokLang?.get() === "en" ? "photosok" : "사진쏙"}.${ext}`;
   }
 
   const crcTable = new Uint32Array(256);

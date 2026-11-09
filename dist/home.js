@@ -66,7 +66,12 @@
 
   // ---- 큰 숫자 결과 카드 ----
   const fmt = bytes => bytes >= 1e6 ? (bytes / 1e6).toFixed(bytes >= 1e7 ? 0 : 1) + 'MB' : Math.max(1, Math.round(bytes / 1e3)) + 'KB';
+  let lastHero = '';
   function setHero(label, valueHtml, ratio, caption) {
+    // 같은 내용이면 다시 그리지 않는다 (화면 번역과 서로 고쳐 쓰는 일을 막음)
+    const key = [label, valueHtml, ratio, caption].join('|');
+    if (key === lastHero) return;
+    lastHero = key;
     $('heroLabel').textContent = label;
     $('heroValue').innerHTML = valueHtml;
     $('heroBarWrap').hidden = ratio == null;
