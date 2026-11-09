@@ -418,7 +418,7 @@ footer { border-top: 0; }
 @media (min-width: 761px) {
   .home-hero { padding: 30px; }
   .hero-value { font-size: 44px; }
-  .tool-grid { grid-template-columns: repeat(4, 1fr); }
+  .tool-grid { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 760px) {
   .topbar { min-height: 64px; padding: 0 16px; }
@@ -491,3 +491,16 @@ footer { border-top: 0; }
 .crop-actions { display: grid; grid-template-columns: auto 1fr; gap: 10px; margin-top: 14px; }
 .crop-actions .small-button { min-height: 50px; padding: 0 16px; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
 .card-actions .crop-button { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+/* v1.12 · 글씨 넣기 */
+#textDialog { max-width: 480px; }
+.text-stage { display: flex; justify-content: center; margin-top: 12px; padding: 12px; border-radius: 14px; background: var(--subtle); }
+#textCanvas { display: block; max-width: 100%; max-height: 42dvh; width: auto; height: auto; border-radius: 4px; touch-action: none; cursor: move; }
+.text-hint { margin: 8px 0 10px; text-align: center; font-size: 12px; color: var(--muted); }
+#textInput { width: 100%; box-sizing: border-box; min-height: 64px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; font-size: 16px; resize: vertical; }
+#textInput:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.text-row { display: flex; gap: 8px; margin-top: 10px; }
+.text-row button { flex: 1; min-height: 42px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--text); font-size: 13px; }
+.text-row button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.text-row.colors button { flex: 0 0 42px; height: 42px; padding: 0; background: var(--sw); border: 2px solid var(--line); }
+.text-row.colors button.on { border: 3px solid var(--accent); box-shadow: 0 0 0 2px var(--panel) inset; }

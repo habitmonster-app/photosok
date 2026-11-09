@@ -61,7 +61,7 @@ function render(){
   else if(item.result){const r=item.result;status.classList.add('done');const src=(item.originalFile||item.file).size,pct=Math.round((1-r.blob.size/src)*100);status.textContent=r.unchanged?fmt(item.file.size)+' · 이미 목표 용량 이하예요':(item.sourceType==='pdf'?'PDF 페이지 → ':fmt(src)+' → ')+fmt(r.blob.size)+(item.sourceType!=='pdf'&&pct>0?' (-'+pct+'%)':'')+' · '+r.width+' × '+r.height;}
   else status.textContent=(item.sourceType==='pdf'?'PDF 페이지':fmt((item.originalFile||item.file).size))+' · '+(item.processing?'처리 중…':planText());detail.append(status);
   if(item.convertInfo?.converted){const meta=document.createElement('p');meta.className='card-meta';meta.textContent='HEIC 변환 완료'+(item.convertInfo.downsized?' · 메모리 보호를 위해 축소됨':'');detail.append(meta);}
-  const editActions=document.createElement('div');editActions.className='card-actions';if(cropFrame){const cb=button(item.crop?'자르기 다시 조절':'자르기 조절',()=>PhotoSokCrop.open(item,cropFrame.w,cropFrame.h));cb.className='crop-button';cb.disabled=state.busy;editActions.append(cb);}const edit=button('서류 보정',()=>editItem(item));edit.disabled=state.busy;editActions.append(edit);if(item.editBackup){const restore=button('보정 전으로',()=>restoreItem(item));restore.disabled=state.busy;editActions.append(restore);}detail.append(editActions);
+  const editActions=document.createElement('div');editActions.className='card-actions';if(cropFrame){const cb=button(item.crop?'자르기 다시 조절':'자르기 조절',()=>PhotoSokCrop.open(item,cropFrame.w,cropFrame.h));cb.className='crop-button';cb.disabled=state.busy;editActions.append(cb);}const tb=button(item.textSpec?'글씨 고치기':'글씨 넣기',()=>PhotoSokText.open(item));tb.disabled=state.busy;editActions.append(tb);const edit=button('서류 보정',()=>editItem(item));edit.disabled=state.busy;editActions.append(edit);if(item.editBackup){const restore=button('보정 전으로',()=>restoreItem(item));restore.disabled=state.busy;editActions.append(restore);}detail.append(editActions);
   if(item.result&&item.stale){const prev=document.createElement('p');prev.className='photo-status stale';prev.textContent='이전 설정 결과 · 다시 처리하면 바뀌어요';detail.append(prev);}
   if(item.result?.metadataRemoved){const meta=document.createElement('p');meta.className='card-meta';meta.textContent='위치·촬영정보 제외됨';detail.append(meta);}
   if(item.result){const actions=document.createElement('div');actions.className='card-actions';actions.append(button('비교',()=>compare(item)),button('저장',()=>download(item)));if(canShareFiles([item]))actions.append(button('공유',()=>sharePhotos([item])));detail.append(actions);}
@@ -89,7 +89,7 @@ async function editItem(item){
  try{
   const input=await itemInputFile(item,{signal:state.controller.signal});
   const edited=await DocumentEditor.open(input,{name:itemTitle(item)});
-  if(!edited)return;
+  if(!edited)return;delete item.textBase;delete item.textSpec;
   if(!item.editBackup)item.editBackup={file:item.file,sourceType:item.sourceType,pageIndex:item.pageIndex,width:item.width,height:item.height,rotation:item.rotation,url:item.url};
   else if(item.url!==item.editBackup.url)URL.revokeObjectURL(item.url);
   const alreadyRotated=item.sourceType==='pdf';
@@ -99,9 +99,9 @@ async function editItem(item){
  }catch(e){if(e.name!=='AbortError')toast(e.message||'서류를 보정하지 못했어요.',true);}
  finally{state.busy=false;state.controller=null;render();}
 }
-function restoreItem(item){if(state.busy||!item.editBackup)return;URL.revokeObjectURL(item.url);Object.assign(item,item.editBackup);delete item.editBackup;touchItem(item);render();toast('보정 전 페이지로 돌아왔어요.');}
+function restoreItem(item){if(state.busy||!item.editBackup)return;URL.revokeObjectURL(item.url);Object.assign(item,item.editBackup);delete item.editBackup;delete item.textBase;delete item.textSpec;touchItem(item);render();toast('보정 전 페이지로 돌아왔어요.');}
 async function addFiles(files){
- if(state.busy)return;let skipped=0,added=0;const problems=[];
+ if(state.busy)return;let skipped=0,added=0;const startLen=state.items.length;const problems=[];
  state.busy=true;state.importing=true;state.controller=new AbortController();const signal=state.controller.signal;$('progress').value=0;$('progressText').textContent='파일을 준비하고 있어요.';render();
  const list=Array.from(files);
  try{for(let at=0;at<list.length;at++){
@@ -134,7 +134,7 @@ async function addFiles(files){
    state.items.push(...pending);added+=pending.length;render();
   }catch(e){for(const p of pending)disposeItem(p);if(pdfInput)await PDFTools.release(file);if(e.name==='AbortError')break;problems.push(file.name+': '+(e.message||'파일을 열지 못했어요.'));}
   $('progress').value=(at+1)/list.length*100;
- }}finally{const cancelled=signal.aborted;state.busy=false;state.importing=false;state.controller=null;render();if(skipped)problems.push('전체 20페이지까지 선택할 수 있어요.');if(problems.length)toast([...new Set(problems)].join(' '),true);else if(cancelled)toast('불러오기를 중단했어요. 추가된 페이지는 그대로예요.');else if(added)toast(added+'페이지를 추가했어요.');}
+ }}finally{const cancelled=signal.aborted;state.busy=false;state.importing=false;state.controller=null;render();if(skipped)problems.push('전체 20페이지까지 선택할 수 있어요.');if(problems.length)toast([...new Set(problems)].join(' '),true);else if(cancelled)toast('불러오기를 중단했어요. 추가된 페이지는 그대로예요.');else if(added)toast(added+'페이지를 추가했어요.');window.PhotoSokText?.afterAdd(state.items.slice(startLen));}
 }
 // 앱에서는 사진 고르기를 갤러리(안드로이드 사진 선택 화면)로, PDF는 파일 앱으로.
 $('choose').onclick=$('addMore').onclick=()=>$(window.PhotoSokApp&&state.mode!=='pdf'?'gallery':'files').click();

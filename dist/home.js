@@ -51,6 +51,10 @@
     document.querySelector('.workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }));
 
+  $('textTile')?.addEventListener('click', () => {
+    if (state.mode === 'pdf') $('workflowPhoto').click();
+    window.PhotoSokText?.start();
+  });
   $('specTile')?.addEventListener('click', () => {
     document.querySelector('.tool[data-tool="compress"]')?.click();
     const d = $('specDetails'); if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }
