@@ -1,0 +1,30 @@
+[
+  {
+    "suite": "pdf",
+    "summary": "검사 완료 · 통과 11 · 실패 0"
+  },
+  {
+    "suite": "heic",
+    "summary": "완료 · 통과 12 · 실패 0 · 활성 Worker 0"
+  },
+  {
+    "suite": "editor",
+    "summary": "완료 · 통과 9 · 실패 0"
+  },
+  {
+    "suite": "delivery",
+    "summary": "통과 15 · 실패 0"
+  },
+  {
+    "suite": "integration",
+    "summary": "검사 완료 · 통과 19 · 실패 0"
+  },
+  {
+    "suite": "photoRegression",
+    "summary": "검사 완료 · 통과 17 · 실패 0"
+  },
+  {
+    "suite": "photoPdfRegression",
+    "summary": "검사 완료 · 통과 11 · 실패 0"
+  }
+]

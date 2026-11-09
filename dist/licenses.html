@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#141615"><title>공개 소프트웨어 · 사진쏙</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;color:#f5f5ef;background:#141615}*{box-sizing:border-box}body{margin:0}main{max-width:920px;margin:auto;padding:32px 22px 70px}a{color:#f7d85b;text-underline-offset:4px;overflow-wrap:anywhere}a:focus-visible{outline:2px solid #f7d85b;outline-offset:5px}h1{font-size:clamp(28px,5vw,42px);line-height:1.2;margin-top:34px}h2{font-size:22px;margin-top:40px}p,li{line-height:1.75;color:#d0d5d0}li{margin:9px 0}.lead{max-width:720px}.card{border:1px solid #3d423e;border-radius:18px;background:#1d211e;padding:18px 22px;margin:22px 0}.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border-bottom:1px solid #3d423e;padding:14px 10px;text-align:left;vertical-align:top;line-height:1.7}th{color:#c1c8c1}td:first-child{min-width:140px;font-weight:650}small{color:#b8c0b8}code{overflow-wrap:anywhere}footer{border-top:1px solid #3d423e;padding-top:22px;margin-top:44px;font-size:13px}ul{padding-left:22px}@media(max-width:500px){main{padding:24px 18px 48px}.card{padding:14px 16px}th,td{padding:12px 8px}}
+</style>
+</head>
+<body><main>
+<a href="./">← 사진쏙으로 돌아가기</a>
+<h1>사용한 공개 소프트웨어</h1>
+<p class="lead">사진쏙의 PDF·HEIC 기능은 아래 프로젝트를 사용합니다. 라이브러리와 필요한 리소스는 이 사이트에서 불러오며, 사용자 사진이나 PDF를 해당 프로젝트의 서버에 보내지 않습니다.</p>
+<div class="card"><p>저작권과 이용 조건은 각 라이선스 원문을 따릅니다. 아래 링크에서 전체 라이선스와 소스를 확인할 수 있습니다. 이들 프로젝트가 사진쏙을 보증하거나 후원한다는 뜻은 아닙니다.</p></div>
+<h2>주요 라이브러리</h2>
+<div class="scroll"><table><thead><tr><th>이름 · 버전</th><th>저작권 · 라이선스</th><th>원문 · 소스</th></tr></thead><tbody>
+<tr><td>pdf-lib 1.17.1</td>Copyright © 2019 Andrew Dillon<br>MIT</td><td><a href="vendor/pdf-lib-LICENSE.md">라이선스</a> · <a href="https://github.com/Hopding/pdf-lib/tree/v1.17.1" target="_blank" rel="noopener noreferrer">원본 프로젝트</a></td></tr>
+<tr><td>PDF.js 6.5.438</td>Mozilla Foundation<br>Apache License 2.0</td><td><a href="vendor/pdfjs/LICENSE">라이선스</a> · <a href="https://github.com/mozilla/pdf.js/tree/v6.5.438" target="_blank" rel="noopener noreferrer">원본 프로젝트</a></td></tr>
+<tr><td>heic-to 1.6.7</td>Hopper Gee<br>LGPL v3 또는 이후 버전<small> (배포된 LICENSE 기준)</small></td><td><a href="vendor/heic-to/LICENSE">LGPL 원문</a> · <a href="vendor/heic-to/GPL-3.0.txt">GPL v3 원문</a><br><a href="https://github.com/hoppergee/heic-to" target="_blank" rel="noopener noreferrer">원본 프로젝트</a> · <a href="vendor/heic-to/UPSTREAM-README.md">배포본 안내</a></td></tr>
+<tr><td>libheif 1.23.7</td>Struktur AG 및 소스에 명시된 기여자<br>라이브러리: LGPL v3</td><td><a href="vendor/heic-to/sources/libheif-1.23.7-COPYING">라이선스</a> · <a href="vendor/heic-to/sources/libheif-1.23.7.tar.gz" download>소스 다운로드</a><br><a href="https://github.com/strukturag/libheif/tree/v1.23.7" target="_blank" rel="noopener noreferrer">원본 프로젝트</a></td></tr>
+<tr><td>libde265 1.0.16</td>Struktur AG 및 소스에 명시된 기여자<br>라이브러리: LGPL v3</td><td><a href="vendor/heic-to/sources/libde265-1.0.16-COPYING">라이선스</a> · <a href="vendor/heic-to/sources/libde265-1.0.16.tar.gz" download>소스 다운로드</a><br><a href="https://github.com/strukturag/libde265/tree/v1.0.16" target="_blank" rel="noopener noreferrer">원본 프로젝트</a></td></tr>
+</tbody></table></div>
+<p><small>heic-to의 package.json 표기는 LGPL-3.0이며, 함께 배포된 LICENSE는 v3 또는 이후 버전을 허용합니다. libheif/libde265 버전은 heic-to 1.6.7의 릴리스 표와 빌드 안내에 근거합니다. 원본 태그의 소스와 라이선스를 함께 제공합니다.</small></p>
+<h2>함께 포함된 구성 요소</h2>
+<ul>
+<li>pdf-lib 관련 모듈: <a href="vendor/pdf-lib-standard-fonts-LICENSE.md">@pdf-lib/standard-fonts · Andrew Dillon · MIT</a>, <a href="vendor/pdf-lib-upng-LICENSE">@pdf-lib/upng · Photopea · MIT</a>, <a href="vendor/pako-LICENSE">pako · MIT</a> 및 <a href="vendor/pako-zlib-NOTICE.txt">zlib 고지</a>. Microsoft 런타임의 Apache 2.0 고지는 배포된 JavaScript에 유지되어 있습니다.</li>
+<li>PDF.js 레거시 빌드의 <a href="vendor/pdfjs/core-js-LICENSE">core-js 3.51.0 · MIT</a>.</li>
+<li>PDF 문자 맵: <a href="vendor/pdfjs/cmaps/LICENSE">Adobe Systems Incorporated의 재배포 조건</a>.</li>
+<li>표준 글꼴: <a href="vendor/pdfjs/standard_fonts/LICENSE_FOXIT">Foxit / PDFium · BSD 형식의 고지</a>, <a href="vendor/pdfjs/standard_fonts/LICENSE_LIBERATION">Liberation · GPL v2 및 글꼴 예외 조항</a>. 여기에는 실제 함께 배포된 글꼴의 라이선스를 표시했습니다.</li>
+<li>색상 프로필: <a href="vendor/pdfjs/iccs/LICENSE">CC0 1.0</a>.</li>
+<li>색상 처리 qcms: <a href="vendor/pdfjs/wasm/LICENSE_QCMS">MIT</a> · <a href="vendor/pdfjs/wasm/LICENSE_PDFJS_QCMS">PDF.js 연결 코드</a>.</li>
+<li>JPEG 2000 OpenJPEG: <a href="vendor/pdfjs/wasm/LICENSE_OPENJPEG">BSD 2-Clause</a> · <a href="vendor/pdfjs/wasm/LICENSE_PDFJS_OPENJPEG">PDF.js 연결 코드</a>.</li>
+<li>QuickJS: <a href="vendor/pdfjs/wasm/LICENSE_QUICKJS">MIT</a> · <a href="vendor/pdfjs/wasm/LICENSE_PDFJS_QUICKJS">PDF.js 연결 코드</a>.</li>
+<li>JBIG2: <a href="vendor/pdfjs/wasm/LICENSE_JBIG2">PDFium 및 포함 구성 요소의 고지</a> · <a href="vendor/pdfjs/wasm/LICENSE_PDFJS_JBIG2">Mozilla 연결 코드 · Apache 2.0</a>.</li>
+</ul>
+<h2>소스 확인 · 다시 빌드하기</h2>
+<p>원본 배포 파일은 내용을 수정하지 않고 포함했습니다. PDF.js의 일부 파일 이름과 heic-to의 Worker용 파일 위치만 바꿨습니다. 라이브러리 출처·정확한 경로·재빌드 및 교체 방법은 <a href="vendor/SOURCES.md">소스와 빌드 안내</a>에 있습니다. <a href="vendor/CHECKSUMS.json">배포 파일 체크섬</a>과 <a href="vendor/heic-to/sources/source-archives.json">디코더 소스 출처·체크섬</a>도 제공합니다.</p>
+<p>heic-to의 읽을 수 있는 소스: <a href="vendor/heic-to/src/index.js">기본 진입점</a> · <a href="vendor/heic-to/src/next/index.js">Worker용 진입점</a> · <a href="vendor/heic-to/src/worker.js">디코딩 Worker</a> · <a href="vendor/heic-to/src/lib/libheif.js">컴파일된 디코더</a> · <a href="vendor/heic-to/esbuild.mjs">빌드 스크립트</a> · <a href="vendor/heic-to/package.json">패키지 정보</a>.</p>
+<p>원본 패키지는 정확한 Emscripten 도구 버전 등 모든 빌드 환경을 기록하지 않았으므로, 제공한 안내만으로 동일한 바이트의 디코더가 재생성된다고 주장하지 않습니다. 수정한 라이브러리로 교체해 별도로 실행할 수 있으며, 앱의 연결 코드는 <a href="heic-support.js">HEIC 준비</a>, <a href="heic-worker.js">HEIC Worker</a>, <a href="pdf-tools.js">PDF 도구</a>에서 확인할 수 있습니다.</p>
+<footer>사진쏙 v1.4 · 각 프로젝트의 라이선스·저작권 고지를 그대로 제공합니다.</footer>
+</main></body></html>

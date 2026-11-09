@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f7f5ef"><meta name="description" content="사진은 필요한 크기로, 서류는 한 파일로. 사진쏙에서 사진·PDF의 용량과 순서를 정리하고 결과를 확인한 뒤 저장하세요.">
+  <title>사진쏙 · 보내기 전, 파일 정리</title>
+  <link rel="icon" type="image/svg+xml" href="assets/brand-mark.svg">
+  <link rel="stylesheet" href="style.css"><link rel="stylesheet" href="document-editor.css"><link rel="stylesheet" href="file-delivery.css">
+</head>
+<body>
+<svg class="svg-defs" aria-hidden="true"><defs>
+<symbol id="i-shrink" viewBox="0 0 24 24"><path d="M5 4H3v6h6M3 10l6-6M19 20h2v-6h-6m6 0-6 6"/><path d="M10 10h4v4h-4z"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><circle cx="8" cy="8" r="1.25"/><path d="m4 17 5-5 3 3 3-5 5 7"/></symbol>
+<symbol id="i-resize" viewBox="0 0 24 24"><path d="M4 8V4h4m8 0h4v4m0 8v4h-4M8 20H4v-4M8 8h8v8H8z"/></symbol>
+<symbol id="i-convert" viewBox="0 0 24 24"><path d="M5 8a7 7 0 0 1 12-3l3 3m0-5v5h-5M19 16a7 7 0 0 1-12 3l-3-3m0 5v-5h5"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-5 6 5-6 5"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4 4 7 8 9 4-2 8-5 8-9V6Z"/><path d="m8 12 3 3 5-6"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
+<symbol id="i-pdf" viewBox="0 0 24 24"><path d="M7 3h8l5 5v12H7V3Zm8 0v5h5M4 7v14M10 12h7m-7 4h5"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></symbol>
+</defs></svg>
+<header class="topbar"><a class="brand" href="./" aria-label="사진쏙 처음으로"><span class="brand-mark"><img src="assets/brand-mark.svg" width="40" height="40" alt=""></span><span>사진쏙</span></a><span class="private-tag"><svg><use href="#i-lock"/></svg><span>파일은 내 기기에서 처리</span></span></header>
+<main>
+  <section class="intro" aria-labelledby="introTitle">
+    <div class="intro-copy"><div class="eyebrow"><span aria-hidden="true"></span>파일을 보내기 전, 작은 정리</div><h1 id="introTitle">보내기 전에,<br>사진쏙.</h1><p>사진은 필요한 크기로, 서류는 한 파일로.<br>저장할 결과를 직접 확인하고 준비하세요.</p></div>
+    <div class="intro-art" aria-hidden="true"><img src="assets/file-desk.svg" width="440" height="290" alt=""></div>
+  </section>
+  <div class="workspace-heading"><span class="eyebrow">작업 선택</span><span>필요한 결과부터 골라보세요.</span></div>
+  <div class="workflow-switch" aria-label="완성할 파일 선택"><button id="workflowPdf" aria-pressed="false"><svg><use href="#i-pdf"/></svg><span><strong>PDF로 모으기</strong><small>페이지·용량 정리</small></span></button><button id="workflowPhoto" class="selected" aria-pressed="true"><svg><use href="#i-image"/></svg><span><strong>사진으로 저장</strong><small>용량 · 크기 · 형식</small></span></button></div>
+  <p id="pdfFlowHint" class="flow-hint" hidden>파일 담기 <span>→</span> 저장 조건 고르기 <span>→</span> 결과 확인</p>
+  <nav class="modes" aria-label="사진 작업 선택"><button class="mode active" data-mode="compress" aria-pressed="true"><svg><use href="#i-shrink"/></svg>용량 줄이기</button><button class="mode" data-mode="resize" aria-pressed="false"><svg><use href="#i-resize"/></svg>크기 조절</button><button class="mode" data-mode="convert" aria-pressed="false"><svg><use href="#i-convert"/></svg>형식 변환</button></nav>
+  <div class="workspace">
+    <section class="photos-panel" aria-label="사진 선택 및 결과">
+      <div id="dropZone" class="dropzone">
+        <div class="drop-art" aria-hidden="true"><img src="assets/inbox.svg" width="120" height="98" alt=""></div>
+        <h2>사진과 PDF를 담아주세요</h2><p class="desktop-copy">파일을 끌어 놓아도 좋아요.</p><button id="choose" class="primary choose"><svg><use href="#i-plus"/></svg>파일 담기</button><button id="camera" class="camera-button"><svg><use href="#i-image"/></svg>카메라로 담기</button><p class="file-hint">JPG · PNG · WebP · 한 번에 최대 20장</p><button id="demo" class="text-button">샘플 서류로 살펴보기 <span aria-hidden="true">↗</span></button>
+      </div>
+      <input type="file" id="files" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,.pdf,.jpg,.jpeg,.png,.webp,.heic,.heif" multiple hidden><input type="file" id="capture" accept="image/*" capture="environment" hidden>
+      <section id="queueSection" hidden>
+        <div class="queue-header"><h2>담은 페이지 <span id="count">0</span></h2><div><button id="addMore" class="small-button"><svg><use href="#i-plus"/></svg>추가</button><button id="clear" class="text-button muted">비우기</button></div></div>
+        <div id="summary" class="summary" hidden><div><span>전체 용량</span><p><span id="totalBefore"></span><svg><use href="#i-arrow"/></svg><strong id="totalAfter"></strong></p></div><b id="saving"></b></div>
+        <p id="staleNote" class="stale-note" hidden>이전 결과를 보관 중이에요. 새 설정은 다시 처리해야 적용돼요.</p>
+        <div id="pdfResult" class="pdf-result" hidden><div class="pdf-result-top"><span class="result-icon"><svg><use href="#i-check"/></svg></span><div><strong id="pdfResultHeading">입력한 파일 조건 충족</strong><p id="pdfResultSummary"></p></div></div><ul id="pdfChecks" class="pdf-checks"></ul><p id="pdfResultWarning" class="helper align-left"></p><div class="pdf-result-actions"><button id="pdfPreview" class="small-button">페이지 미리보기</button><button id="pdfSave" class="primary"><svg><use href="#i-download"/></svg>PDF 저장</button></div><button id="pdfShare" class="share-all" hidden>PDF 바로 공유</button><p class="helper">저장할 파일의 용량·형식·페이지 수를 확인했어요.<br>제출처의 나머지 조건과 글자 가독성은 직접 확인해주세요.</p></div>
+        <p id="pdfError" class="pdf-error" role="alert" hidden></p>
+        <p id="pdfOrderHint" class="helper align-left" hidden>위에서부터 PDF 페이지가 돼요. 화살표로 순서를 바꿀 수 있어요.</p>
+        <div id="photoList" class="photo-list"></div>
+        <button id="saveAll" class="save-all" hidden><svg><use href="#i-download"/></svg><span>모두 저장하기 (ZIP)</span></button>
+        <button id="shareAll" class="share-all" hidden>휴대폰으로 바로 공유</button>
+        <p id="zipNote" class="helper" hidden>여러 장은 ZIP 파일로 저장돼요. 압축을 풀면 사진이 나와요.</p>
+      </section>
+    </section>
+    <aside class="settings-panel">
+      <div class="settings-heading"><span class="step-number">02</span><h2 id="settingsTitle">원하는 용량을 골라주세요</h2></div>
+      <div id="pdfSettings" hidden><div class="pdf-mode-choice" aria-label="PDF 처리 방식"><button type="button" data-pdf-mode="target" class="selected" aria-pressed="true">용량 맞추기</button><button type="button" data-pdf-mode="preserve" aria-pressed="false">글자 유지 · 합치기</button></div><p id="pdfModeNote" class="mode-note">PDF 페이지는 사진으로 바뀌어 글자 검색이 사라져요. 전체 용량에 맞춰 저장해요.</p><div id="pdfTargetControls"><p class="whole-file-label">사진 한 장이 아닌 <b>PDF 전체 용량</b>이에요</p><div class="preset-grid pdf-presets"><button data-pdf-target="1000000" class="selected" aria-pressed="true"><strong>1 <span>MB</span></strong><small>전체 파일</small></button><button data-pdf-target="2000000" aria-pressed="false"><strong>2 <span>MB</span></strong><small>전체 파일</small></button><button data-pdf-target="5000000" aria-pressed="false"><strong>5 <span>MB</span></strong><small>전체 파일</small></button></div><button id="pdfCustomToggle" class="custom-toggle" aria-expanded="false">다른 용량 입력 <span>＋</span></button><div id="pdfCustomWrap" class="custom-input" hidden><label for="pdfCustomKB">PDF 전체 제한 용량 (KB)</label><input id="pdfCustomKB" type="number" value="1000" min="100" max="40000" inputmode="numeric"><small>100 ~ 40,000KB · 1MB = 1,000,000바이트</small></div></div><label for="pdfName" class="field-label pdf-name-label">완성할 파일 이름</label><div class="pdf-filename"><input id="pdfName" maxlength="80" value="제출서류" placeholder="예: 제출서류_이름"><span>.pdf</span></div><details class="advanced" id="pdfLayoutDetails"><summary>페이지 모양 <span>＋</span></summary><select id="pdfPageSize" aria-label="PDF 페이지 모양"><option value="a4">A4 · 서류에 맞추기</option><option value="photo">사진 비율 그대로</option></select><p class="helper align-left">A4는 사진을 자르지 않고 여백을 넣어요.</p></details><div class="note" id="pdfResolutionNote"><span class="note-dot"></span><p>너무 작게 줄여야 하면 용량을 높이도록 안내해요. 저장 전 미리보기로 글자를 확인해주세요.</p></div></div>
+      <div id="compressSettings">
+        <div class="preset-grid" aria-label="목표 용량"><button data-target="200000"><strong>200 <span>KB</span></strong><small>작은 첨부파일</small></button><button data-target="500000" class="selected" aria-pressed="true"><span class="preset-check">✓</span><strong>500 <span>KB</span></strong><small>서류 · 신청서</small></button><button data-target="1000000"><strong>1 <span>MB</span></strong><small>공유용 사진</small></button></div>
+        <button id="customToggle" class="custom-toggle" aria-expanded="false">다른 용량 입력 <span>＋</span></button><div id="customWrap" class="custom-input" hidden><label for="customSize">목표 용량</label><div><input id="customSize" type="number" min="10" max="40000" step="1" value="500" inputmode="numeric"><span>KB 이하</span></div><small>10 ~ 40,000KB · 1KB = 1,000바이트</small></div>
+        <div class="note"><span class="note-dot"></span><p>선택한 용량 <b>이하로</b> 맞춰드려요.<br>필요하면 사진 크기도 함께 줄어들어요.</p></div>
+        <details class="advanced" id="specDetails"><summary>가로·세로 규격도 맞추기 <span>＋</span></summary><label class="check-row"><input type="checkbox" id="exactSize"><span>가로·세로 크기 지정</span></label><div id="exactFields" hidden><div class="size-inputs"><label for="exactWidth">가로 (px)<input id="exactWidth" type="number" value="600" min="100" max="4000" inputmode="numeric"></label><span>×</span><label for="exactHeight">세로 (px)<input id="exactHeight" type="number" value="800" min="100" max="4000" inputmode="numeric"></label></div><div class="size-presets"><button type="button" data-dimensions="600,800">600 × 800</button><button type="button" data-dimensions="1000,1000">1,000 × 1,000</button></div><p class="helper align-left">사진을 자르거나 늘이지 않고 흰 여백으로 맞춰요. 제출처의 규격을 직접 확인해주세요.</p></div></details>
+      </div>
+      <div id="resizeSettings" hidden><label class="field-label" for="maxEdge">긴 쪽 길이</label><div class="select-wrap"><select id="maxEdge"><option value="800">800px · 작게</option><option value="1280">1,280px · 가볍게</option><option value="1600" selected>1,600px · 기본</option><option value="2048">2,048px · 선명하게</option><option value="custom">직접 입력</option></select></div><div id="customEdgeWrap" class="custom-input" hidden><label for="customEdge">긴 쪽 길이 (100 ~ 8,000px)</label><input id="customEdge" type="number" value="1600" min="100" max="8000" inputmode="numeric"></div><div class="note"><span class="note-dot"></span><p>가로세로 비율을 유지해요.<br>작은 사진은 확대하지 않아요.</p></div></div>
+      <div id="convertSettings" hidden><label class="field-label" for="format">저장할 형식</label><div class="select-wrap"><select id="format"><option value="image/jpeg">JPG · 사진 공유에 좋아요</option><option value="image/png">PNG · 투명 배경을 유지해요</option><option value="image/webp">WebP · 웹에서 가볍게 사용해요</option></select></div><div class="note"><span class="note-dot"></span><p>형식에 따라 용량이 커질 수 있어요.<br>JPG 변환 시 투명 배경은 흰색이 돼요.</p></div></div>
+      <label class="check-row privacy-option"><input type="checkbox" id="stripMetadata" checked><span>위치·촬영정보 제외<small>사진 속 글자나 얼굴은 그대로 남아요</small></span></label>
+      <div class="setting-divider"></div><div class="output-info"><span>저장 방식</span><strong id="outputLabel">JPG · 원본은 그대로</strong></div><p class="output-note" id="outputNote">위치·촬영정보를 제외한 새 JPG로 저장해요.<br>투명 배경은 흰색이 돼요.</p>
+      <button id="process" class="primary process" disabled><svg><use href="#i-shrink"/></svg><span>사진을 먼저 선택해주세요</span><svg class="button-arrow"><use href="#i-arrow"/></svg></button><button id="cancel" class="text-button cancel" hidden>처리 중단</button><div id="progressWrap" hidden><progress id="progress" max="100" value="0"></progress><p id="progressText" class="helper" role="status"></p></div>
+      <p class="safe-caption"><svg><use href="#i-lock"/></svg>사진을 서버에 올리지 않아요</p>
+    </aside>
+  </div>
+  <section class="trust-row" aria-label="앱 안내"><div><span class="trust-icon"><svg><use href="#i-check"/></svg></span><p><strong>원본과 따로 저장</strong><span>선택한 원본 파일은 바꾸지 않아요</span></p></div><div><span class="trust-icon"><svg><use href="#i-image"/></svg></span><p><strong>결과를 먼저 확인</strong><span>페이지와 사진을 살펴보고 저장해요</span></p></div><div><span class="trust-icon"><svg><use href="#i-lock"/></svg></span><p><strong>파일 전송 없이 처리</strong><span>변환 작업은 이 기기에서 진행돼요</span></p></div></section>
+  <details class="faq"><summary>처리 범위와 저장 안내 <span>＋</span></summary><p>사진과 PDF를 함께 넣고 페이지를 순서대로 정리할 수 있어요. ‘글자 유지 · 합치기’는 기존 PDF의 글자를 유지하지만 목표 용량을 보장하지 않아요. ‘용량 맞추기’는 PDF 페이지도 사진으로 바꾸므로 글자 검색·입력 양식·전자서명이 유지되지 않아요. 암호로 보호된 PDF는 지원하지 않아요.</p><p>‘서류 보정’에서 네 모서리를 직접 움직여 테두리와 기울기를 맞출 수 있어요. 보정한 PDF 페이지는 사진으로 바뀝니다. 자동 테두리 인식이나 문자인식(OCR)은 지원하지 않아요.</p><p>파일당 40MB, 원본 합계 200MB, 전체 20페이지까지 처리해요. 아주 큰 사진은 최대 2,400만 화소로 줄어들 수 있어요. HEIC를 브라우저가 직접 열지 못하면 기기 안에서 PNG로 바꿔 처리해요. 변환은 최대 1,200만 화소·긴 변 4,096px로 제한하며, 3,200만 화소를 넘는 HEIC는 기기 보호를 위해 거절할 수 있어요.</p><p>사진·용량 맞춤 PDF의 촬영정보는 제외돼요. ‘글자 유지 · 합치기’는 기존 PDF 안의 정보나 사진 속 글자를 자동으로 지우지 않아요. 저장 버튼은 브라우저에 다운로드를 요청하며, 저장 창의 ‘파일 열기’나 ‘공유’로도 이어서 보낼 수 있어요. <a href="licenses.html">사용한 공개 소프트웨어</a></p></details>
+</main>
+<footer><span>사진쏙</span><p>파일 준비의 마지막 한 번.</p><span class="version">v1.5</span></footer>
+<div id="mobileBar" class="mobile-bar" hidden><div><strong id="mobileStatus"></strong><span id="mobileHint"></span></div><button id="mobileShare" class="small-button" hidden>공유</button><button id="mobileAction" class="primary">용량 줄이기</button></div>
+<div id="toast" class="toast" role="status" hidden></div>
+<dialog id="compareDialog"><div class="dialog-head"><h2>사진 비교하기</h2><button id="closeCompare" class="icon-button" aria-label="비교 닫기"><svg><use href="#i-close"/></svg></button></div><p id="compareName" class="compare-name"></p><div class="compare-stage"><img id="afterImage" alt="처리한 사진"><div id="beforeLayer"><img id="beforeImage" alt="원본 사진"></div><span class="before-badge">원본</span><span class="after-badge">결과</span><div id="splitLine"></div></div><label class="slider-label" for="compareRange">슬라이더를 움직여 전후를 비교하세요</label><input id="compareRange" type="range" min="0" max="100" value="50"><div class="compare-meta"><span id="beforeMeta"></span><svg><use href="#i-arrow"/></svg><strong id="afterMeta"></strong></div><button id="dialogSave" class="primary"><svg><use href="#i-download"/></svg>이 사진 저장하기</button></dialog>
+<dialog id="pdfPreviewDialog"><div class="dialog-head"><h2>PDF 페이지 확인</h2><button id="pdfClosePreview" class="icon-button" aria-label="PDF 미리보기 닫기"><svg><use href="#i-close"/></svg></button></div><div class="pdf-preview-controls"><button id="pdfPrevPage" class="small-button">이전</button><strong id="pdfPageCounter"></strong><button id="pdfNextPage" class="small-button">다음</button></div><div class="pdf-preview-scroll"><div id="pdfPageCanvas" class="pdf-page-canvas"><img id="pdfPageImage" alt="PDF에 들어가는 페이지 사진"></div></div><p id="pdfPreviewNote" class="helper">사진으로 만든 PDF는 글자 검색이 되지 않아요.</p><button id="pdfPreviewSave" class="primary">PDF 저장하기</button></dialog>
+<script src="compress.js"></script><script src="pdf.js"></script><script src="pdf-tools.js"></script><script src="heic-support.js"></script><script src="document-editor.js"></script><script src="file-delivery.js"></script><script src="ui-copy.js"></script><script src="app.js"></script><script src="submission.js"></script>
+</body></html>

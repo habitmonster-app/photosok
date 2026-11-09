@@ -1,0 +1,47 @@
+[
+  {
+    "path": "pdf-lib.min.js",
+    "size_bytes": 525099,
+    "sha256": "0f9a5cad07941f0826586c94e089d89b918c46e5c17cf2d5a3c6f666e3bc694f"
+  },
+  {
+    "path": "pdfjs/pdf.mjs",
+    "size_bytes": 537769,
+    "sha256": "522ad2c83bc8a0010e7f0cc60d0892b77c8d2bf2c9702dc12288311d94270f42"
+  },
+  {
+    "path": "pdfjs/pdf.worker.mjs",
+    "size_bytes": 1327591,
+    "sha256": "b4c8353ded0d88d2e2009574a29eb4e0c3ff7e942ecdf51ef5f71566a9667f31"
+  },
+  {
+    "path": "pdfjs/pdf.renderer.mjs",
+    "size_bytes": 175127,
+    "sha256": "6b44d83e7eecb7dc671e1aa2a98e826b85dd7ffcbf1138198e626a5e0bcd447d"
+  },
+  {
+    "path": "heic-to/heic-to.js",
+    "size_bytes": 3225679,
+    "sha256": "923713573d972152d741cb9a4e6a37ad8c8fb813c86e0c8f9bc5d68a0a57a849"
+  },
+  {
+    "path": "heic-to/src/worker.js",
+    "size_bytes": 1540,
+    "sha256": "ef7f9315fc864c9de78d26b54238d21b341cf5f2c64242bf5dced1ce0e89cc19"
+  },
+  {
+    "path": "heic-to/src/lib/libheif.js",
+    "size_bytes": 3399412,
+    "sha256": "690c8f1ab45caa34fa519ba1cc467d4363734957e712fffdb4cd645abbee44dd"
+  },
+  {
+    "path": "heic-to/src/lib/libheif-without-unsafe-eval.js",
+    "size_bytes": 3397950,
+    "sha256": "75aaf03816c22f8cf40dbcaeb22bee83f2e1c5da4b7417577a7883b296348734"
+  },
+  {
+    "path": "heic-to/esbuild.mjs",
+    "size_bytes": 4422,
+    "sha256": "83f350fec9c254160222a03f25b6c39e01a7fe6f8b5a00f212887fc08df3a141"
+  }
+]

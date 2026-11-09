@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>사진쏙 기능 검사</title><style>
+body{background:#17191c;color:#f5f5f5;font:15px/1.6 system-ui,sans-serif;margin:24px}h1{font-size:23px;margin:0 0 6px}h2{font-size:18px}#summary{font-weight:700;color:#ffd759}li{padding:8px 12px;border-bottom:1px solid #35383d;overflow-wrap:anywhere}.pass{color:#90e0ac}.fail{color:#ff9e9e}.pending{color:#b3b5bb}ol{padding:0;list-style:none;max-width:950px}.phone{width:390px;max-width:100%;height:844px;border:2px solid #4c4e52;border-radius:24px;background:#111;overflow:hidden}iframe{width:100%;height:100%;border:0}p{color:#aeb2bb}code{color:#ffe18b}
+</style></head><body>
+<h1>사진쏙 — 브라우저 기능 검사</h1><div id="summary">검사 준비 중…</div><ol id="results"></ol>
+<h2>390px 모바일 화면</h2><div class="phone"><iframe src="../dist/index.html" title="사진쏙 모바일 화면"></iframe></div>
+<script src="../dist/compress.js"></script><script>
+window.__qa={done:false,passed:0,failed:0,results:[]};
+const $=id=>document.getElementById(id);
+const assert=(value,message)=>{if(!value)throw new Error(message)};
+const canvasBlob=(canvas,type='image/png',quality=1)=>new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('fixture encoding failed')),type,quality));
+function fileOf(blob,name){return new File([blob],name,{type:blob.type})}
+async function pixels(blob,x,y){const image=await createImageBitmap(blob);const c=document.createElement('canvas');c.width=image.width;c.height=image.height;const ctx=c.getContext('2d');ctx.drawImage(image,0,0);const result=[...ctx.getImageData(x,y,1,1).data];image.close();c.width=1;c.height=1;return result}
+function gpsExifSegment(){
+ // Valid little-endian TIFF: IFD0 points to a GPS IFD with version,
+ // latitude/longitude references and three RATIONAL components each.
+ const payload=new Uint8Array(146),v=new DataView(payload.buffer),t=6;
+ payload.set([69,120,105,102,0,0]);payload.set([73,73],t);v.setUint16(t+2,42,true);v.setUint32(t+4,8,true);
+ v.setUint16(t+8,1,true);v.setUint16(t+10,0x8825,true);v.setUint16(t+12,4,true);v.setUint32(t+14,1,true);v.setUint32(t+18,26,true);
+ v.setUint16(t+26,5,true);
+ const entry=(n,tag,type,count,value)=>{const p=t+28+n*12;v.setUint16(p,tag,true);v.setUint16(p+2,type,true);v.setUint32(p+4,count,true);v.setUint32(p+8,value,true);};
+ entry(0,0,1,4,0x00000302);entry(1,1,2,2,78);entry(2,2,5,3,92);entry(3,3,2,2,69);entry(4,4,5,3,116);
+ [37,30,0,127,0,0].forEach((n,i)=>{v.setUint32(t+92+i*8,n,true);v.setUint32(t+96+i*8,1,true);});
+ const segment=new Uint8Array(payload.length+4);segment.set([255,225,(payload.length+2)>>8,(payload.length+2)&255]);segment.set(payload,4);return segment;
+}
+async function readGps(blob){
+ const bytes=new Uint8Array(await blob.arrayBuffer()),v=new DataView(bytes.buffer);let offset=2;
+ while(offset+4<=bytes.length){if(bytes[offset]!==255)break;const marker=bytes[offset+1];if(marker===0xda||marker===0xd9)break;const size=v.getUint16(offset+2);if(size<2||offset+size+2>bytes.length)break;
+  if(marker===0xe1&&String.fromCharCode(...bytes.slice(offset+4,offset+10))==='Exif\0\0'){
+   const t=offset+10,le=bytes[t]===73,ifd=t+v.getUint32(t+4,le),count=v.getUint16(ifd,le);
+   for(let i=0;i<count;i++){const p=ifd+2+i*12;if(v.getUint16(p,le)===0x8825){const gps=t+v.getUint32(p+8,le),entries=v.getUint16(gps,le),out={};for(let j=0;j<entries;j++){const q=gps+2+j*12,tag=v.getUint16(q,le);if(tag===2||tag===4){const at=t+v.getUint32(q+8,le);out[tag]=[0,1,2].map(k=>v.getUint32(at+k*8,le)/v.getUint32(at+k*8+4,le));}}return out;}}
+  }offset+=size+2;
+ }return null;
+}
+async function test(name,fn){const li=document.createElement('li');li.className='pending';li.textContent='실행 중 · '+name;$('results').append(li);try{const detail=await fn();li.className='pass';li.textContent='PASS · '+name+(detail?' — '+detail:'');__qa.passed++;__qa.results.push({name,pass:true,detail});}catch(error){li.className='fail';li.textContent='FAIL · '+name+' — '+error.message;__qa.failed++;__qa.results.push({name,pass:false,error:error.message});} $('summary').textContent=`통과 ${__qa.passed} · 실패 ${__qa.failed} · 검사 중`;}
+async function run(){
+ const E=PhotoEngine;
+ const noise=document.createElement('canvas');noise.width=2048;noise.height=1536;const ctx=noise.getContext('2d');const data=ctx.createImageData(noise.width,noise.height);let seed=123456789;
+ for(let i=0;i<data.data.length;i+=4){seed=(Math.imul(seed,1664525)+1013904223)>>>0;data.data[i]=seed&255;data.data[i+1]=(seed>>>8)&255;data.data[i+2]=(seed>>>16)&255;data.data[i+3]=255;}ctx.putImageData(data,0,0);
+ const original=fileOf(await canvasBlob(noise),'deterministic-noise.png');noise.width=1;noise.height=1;
+ for(const target of [200000,500000,1000000])await test(`용량 줄이기 ${target/1000} KB 이하`,async()=>{const r=await E.compress(original,target);assert(r.blob.size<=target,`목표 초과: ${r.blob.size}`);assert(r.blob.size>0,'empty output');assert(r.mime==='image/jpeg','not JPEG');const bitmap=await createImageBitmap(r.blob);assert(bitmap.width===r.width&&bitmap.height===r.height,'result dimensions differ');bitmap.close();return `${original.size.toLocaleString()} → ${r.blob.size.toLocaleString()} bytes · ${r.width}×${r.height}`;});
+ await test('크기 조절: 긴 변 1600px, 비율 유지',async()=>{const r=await E.transform(original,{mode:'resize',maxEdge:1600});assert(r.width===1600&&r.height===1200,`${r.width}×${r.height}`);return `${r.width}×${r.height}`;});
+ await test('동시 규격: 600×800px와 100KB 이하',async()=>{const r=await E.compress(original,100000,{exactWidth:600,exactHeight:800});const image=await createImageBitmap(r.blob);assert(image.width===600&&image.height===800,'출력 크기 변경');image.close();assert(r.blob.size<=100000,'용량 초과');const corner=await pixels(r.blob,10,10);assert(corner.slice(0,3).every(n=>n>250),'여백이 흰색이 아님');return `${r.width}×${r.height} · ${r.blob.size} bytes · 흰 여백`;});
+ await test('동시 규격: 무리한 용량이면 크기를 바꾸지 않고 안내',async()=>{try{await E.compress(original,1024,{exactWidth:600,exactHeight:800});}catch(e){assert(e.message.includes('가로·세로'),'규격 제한 안내 없음');return e.message;}throw new Error('불가능한 용량을 조용히 허용함');});
+ await test('동시 규격: 가로·세로 입력 검증',async()=>{for(const dimensions of [{exactWidth:600},{exactWidth:99,exactHeight:800},{exactWidth:600.5,exactHeight:800},{exactWidth:600,exactHeight:4001}]){let rejected=false;try{await E.compress(original,100000,dimensions);}catch(e){rejected=e.message.includes('100~4,000');}assert(rejected,JSON.stringify(dimensions));}return '누락·범위·소수 값 거절';});
+ await test('동시 규격: 작은 사진 확대·왜곡 없이 가운데 배치',async()=>{const c=document.createElement('canvas');c.width=200;c.height=100;const x=c.getContext('2d');x.fillStyle='blue';x.fillRect(0,0,100,100);x.fillStyle='red';x.fillRect(100,0,100,100);const input=fileOf(await canvasBlob(c),'two-colors.png');const r=await E.compress(input,100000,{exactWidth:600,exactHeight:800});const white=await pixels(r.blob,180,400),above=await pixels(r.blob,250,330),blue=await pixels(r.blob,250,400),red=await pixels(r.blob,350,400);assert(white.slice(0,3).every(n=>n>250)&&above.slice(0,3).every(n=>n>250),'원본이 확대됨');assert(blue[2]>240&&blue[0]<10&&red[0]>240&&red[2]<10,'비율/배치/색상 오류');return '200×100 원본은 600×800 흰 프레임 중앙 유지';});
+ const alpha=document.createElement('canvas');alpha.width=32;alpha.height=32;const actx=alpha.getContext('2d');actx.fillStyle='rgba(255,0,0,0.5)';actx.fillRect(0,0,16,16);const alphaFile=fileOf(await canvasBlob(alpha),'alpha.png');
+ await test('PNG 변환: 투명도 유지',async()=>{const r=await E.transform(alphaFile,{mode:'convert',format:'image/png'});const half=await pixels(r.blob,4,4),clear=await pixels(r.blob,28,28);assert(Math.abs(half[3]-128)<=1,`반투명 alpha ${half[3]}`);assert(clear[3]===0,`투명 alpha ${clear[3]}`);return `반투명 ${half[3]}/255 · 투명 ${clear[3]}/255`;});
+ await test('JPG 변환: 투명 영역 흰색',async()=>{const r=await E.transform(alphaFile,{mode:'convert',format:'image/jpeg'});const p=await pixels(r.blob,28,28);assert(p.every((x,i)=>i===3?x===255:x>=250),`rgba ${p}`);return `RGBA ${p.join(', ')}`;});
+ await test('목표보다 작은 원본 유지',async()=>{const r=await E.compress(alphaFile,200000);assert(r.unchanged&&r.blob===alphaFile,'원본이 변경됨');assert(r.metadataRemoved===false,'변환 없는 파일에 제거 표시');assert(r.width===32&&r.height===32,'크기 변경');return `${r.blob.size} bytes · 원본과 같은 Blob`;});
+ await test('개인정보 제거: 작은 사진도 다시 저장',async()=>{const r=await E.compress(alphaFile,200000,{stripMetadata:true});assert(!r.unchanged&&r.blob!==alphaFile&&r.metadataRemoved,'재인코딩하지 않음');assert(r.blob.type==='image/jpeg','JPG 출력 아님');assert(r.blob.size<=200000,'목표 용량 초과');return '원본과 별도 JPG · 제거 상태 확인';});
+ await test('개인정보 제거: 실제 EXIF GPS 좌표 제거',async()=>{const c=document.createElement('canvas');c.width=80;c.height=60;const x=c.getContext('2d');x.fillStyle='#137bc2';x.fillRect(0,0,80,60);const clean=await canvasBlob(c,'image/jpeg',.9),base=new Uint8Array(await clean.arrayBuffer());const input=new File([base.slice(0,2),gpsExifSegment(),base.slice(2)],'gps-photo.jpg',{type:'image/jpeg'});const gps=await readGps(input);assert(gps&&gps[2][0]===37&&gps[4][0]===127,'GPS 시험 파일이 올바르지 않음');const kept=await E.compress(input,200000);assert((await readGps(kept.blob))!==null,'유지 경로에서 GPS 소실');const r=await E.compress(input,200000,{stripMetadata:true});assert(await readGps(r.blob)===null,'GPS 정보가 남아 있음');const image=await createImageBitmap(r.blob);assert(image.width===80&&image.height===60,'사진 크기 손상');image.close();assert(r.metadataRemoved,'제거 결과 플래그');return 'Exif GPS (37°30′N,127°E) → 제거됨 · 사진 정상';});
+ await test('확대 금지: 작은 사진 크기 유지',async()=>{const r=await E.transform(alphaFile,{mode:'resize',maxEdge:1600});assert(r.width===32&&r.height===32,'작은 사진 확대됨');return '32×32 유지';});
+ await test('깨진 파일 안내',async()=>{try{await E.compress(new File(['not an image'],'broken.jpg',{type:'image/jpeg'}),200000);}catch(e){assert(e.message.includes('열 수 없는'),'오류 안내 없음');return e.message;}throw new Error('깨진 파일을 허용함')});
+ await test('취소 신호 처리',async()=>{const controller=new AbortController();controller.abort();try{await E.compress(alphaFile,200000,{signal:controller.signal});}catch(e){assert(e.name==='AbortError','잘못된 취소 오류');return e.name;}throw new Error('취소되지 않음')});
+ await test('ZIP 구조 · 한글 이름 · 중복 이름',async()=>{const z=await E.zip([{name:'사진.jpg',blob:new Blob(['first'])},{name:'사진.jpg',blob:new Blob(['second'])}]);const buffer=await z.arrayBuffer(),v=new DataView(buffer),u=new Uint8Array(buffer),decoder=new TextDecoder();let offset=0;const names=[],contents=[];for(let i=0;i<2;i++){assert(v.getUint32(offset,true)===0x04034b50,'local header');assert(v.getUint16(offset+6,true)&0x0800,'UTF-8 flag');const size=v.getUint32(offset+18,true),length=v.getUint16(offset+26,true);names.push(decoder.decode(u.slice(offset+30,offset+30+length)));contents.push(decoder.decode(u.slice(offset+30+length,offset+30+length+size)));offset+=30+length+size;}assert(names.join('|')==='사진.jpg|사진_2.jpg','duplicate/Unicode names');assert(contents.join('|')==='first|second','file content changed');assert(v.getUint32(offset,true)===0x02014b50,'central directory');assert(v.getUint32(buffer.byteLength-22,true)===0x06054b50,'end record');assert(v.getUint16(buffer.byteLength-12,true)===2,'entry count');return `${z.size} bytes · ${names.join(', ')}`;});
+ __qa.done=true;$('summary').textContent=`검사 완료 · 통과 ${__qa.passed} · 실패 ${__qa.failed}`;document.title=`${__qa.failed?'FAIL':'PASS'} — 사진쏙 기능 검사`;
+}
+run().catch(e=>{__qa.done=true;__qa.failed++;__qa.results.push({name:'test setup',pass:false,error:e.message});$('summary').textContent='검사 준비 실패: '+e.message;});
+</script></body></html>

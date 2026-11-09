@@ -1,0 +1,11 @@
+{
+  "name": "photo-light",
+  "version": "1.4.0",
+  "private": true,
+  "description": "Local-first photo and document submission preparation",
+  "dependencies": {
+    "heic-to": "1.6.7",
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "6.5.438"
+  }
+}

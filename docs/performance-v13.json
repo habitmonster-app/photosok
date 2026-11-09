@@ -1,0 +1,1270 @@
+{
+  "done": true,
+  "passed": 45,
+  "failed": 0,
+  "fixtureBytes": {
+    "photo": 8427155,
+    "documentsPNG": [
+      3511808,
+      3530171
+    ],
+    "documentsJPEG": [
+      566940,
+      567036
+    ],
+    "corners": 498
+  },
+  "checks": [
+    {
+      "name": "사진 200KB baseline 1회 용량 준수",
+      "pass": true,
+      "detail": "197665 bytes · 993×745"
+    },
+    {
+      "name": "사진 200KB current 1회 용량 준수",
+      "pass": true,
+      "detail": "197665 bytes · 993×745"
+    },
+    {
+      "name": "사진 200KB current 2회 용량 준수",
+      "pass": true,
+      "detail": "197665 bytes · 993×745"
+    },
+    {
+      "name": "사진 200KB baseline 2회 용량 준수",
+      "pass": true,
+      "detail": "197665 bytes · 993×745"
+    },
+    {
+      "name": "사진 200KB baseline 3회 용량 준수",
+      "pass": true,
+      "detail": "197665 bytes · 993×745"
+    },
+    {
+      "name": "사진 200KB current 3회 용량 준수",
+      "pass": true,
+      "detail": "197665 bytes · 993×745"
+    },
+    {
+      "name": "사진 500KB baseline 1회 용량 준수",
+      "pass": true,
+      "detail": "486862 bytes · 1571×1178"
+    },
+    {
+      "name": "사진 500KB current 1회 용량 준수",
+      "pass": true,
+      "detail": "486862 bytes · 1571×1178"
+    },
+    {
+      "name": "사진 500KB current 2회 용량 준수",
+      "pass": true,
+      "detail": "486862 bytes · 1571×1178"
+    },
+    {
+      "name": "사진 500KB baseline 2회 용량 준수",
+      "pass": true,
+      "detail": "486862 bytes · 1571×1178"
+    },
+    {
+      "name": "사진 500KB baseline 3회 용량 준수",
+      "pass": true,
+      "detail": "486862 bytes · 1571×1178"
+    },
+    {
+      "name": "사진 500KB current 3회 용량 준수",
+      "pass": true,
+      "detail": "486862 bytes · 1571×1178"
+    },
+    {
+      "name": "회전 PDF 2장 1MB baseline 1회 용량 준수",
+      "pass": true,
+      "detail": "970789 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF 2장 1MB current 1회 용량 준수",
+      "pass": true,
+      "detail": "967705 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF 2장 1MB current 2회 용량 준수",
+      "pass": true,
+      "detail": "967705 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF 2장 1MB baseline 2회 용량 준수",
+      "pass": true,
+      "detail": "970789 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF 2장 1MB baseline 3회 용량 준수",
+      "pass": true,
+      "detail": "970789 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF 2장 1MB current 3회 용량 준수",
+      "pass": true,
+      "detail": "967705 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF JPEG 2장 1MB baseline 1회 용량 준수",
+      "pass": true,
+      "detail": "982588 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF JPEG 2장 1MB current 1회 용량 준수",
+      "pass": true,
+      "detail": "989378 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF JPEG 2장 1MB current 2회 용량 준수",
+      "pass": true,
+      "detail": "989378 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF JPEG 2장 1MB baseline 2회 용량 준수",
+      "pass": true,
+      "detail": "982588 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF JPEG 2장 1MB baseline 3회 용량 준수",
+      "pass": true,
+      "detail": "982588 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF JPEG 2장 1MB current 3회 용량 준수",
+      "pass": true,
+      "detail": "989378 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF 2장 8MB baseline 1회 용량 준수",
+      "pass": true,
+      "detail": "2324162 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF 2장 8MB current 1회 용량 준수",
+      "pass": true,
+      "detail": "2305271 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF 2장 8MB current 2회 용량 준수",
+      "pass": true,
+      "detail": "2305271 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF 2장 8MB baseline 2회 용량 준수",
+      "pass": true,
+      "detail": "2324162 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF 2장 8MB baseline 3회 용량 준수",
+      "pass": true,
+      "detail": "2324162 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "회전 PDF 2장 8MB current 3회 용량 준수",
+      "pass": true,
+      "detail": "2305271 bytes · 2200×1600 / 2200×1600"
+    },
+    {
+      "name": "PDF 페이지별 실제 픽셀 회전",
+      "pass": true,
+      "detail": "90°/270° 네 모서리 색상 일치"
+    },
+    {
+      "name": "직접 압축 0° 픽셀과 크기",
+      "pass": true,
+      "detail": "120×80"
+    },
+    {
+      "name": "직접 압축 90° 픽셀과 크기",
+      "pass": true,
+      "detail": "80×120"
+    },
+    {
+      "name": "직접 압축 180° 픽셀과 크기",
+      "pass": true,
+      "detail": "120×80"
+    },
+    {
+      "name": "직접 압축 270° 픽셀과 크기",
+      "pass": true,
+      "detail": "80×120"
+    },
+    {
+      "name": "작은 원본도 회전 요청 시 새 결과 생성",
+      "pass": true,
+      "detail": "원본 유지 경로 우회 확인"
+    },
+    {
+      "name": "고정 규격은 회전해도 유지",
+      "pass": true,
+      "detail": "300×200 유지"
+    },
+    {
+      "name": "PNG 회전 후 투명도 유지",
+      "pass": true,
+      "detail": "90° / alpha 보존"
+    },
+    {
+      "name": "사진 200KB 인코딩 횟수 비증가",
+      "pass": true,
+      "detail": "11 → 9"
+    },
+    {
+      "name": "사진 500KB 인코딩 횟수 비증가",
+      "pass": true,
+      "detail": "11 → 7"
+    },
+    {
+      "name": "회전 PDF 2장 1MB 인코딩 횟수 비증가",
+      "pass": true,
+      "detail": "22 → 14"
+    },
+    {
+      "name": "회전 PDF JPEG 2장 1MB 인코딩 횟수 비증가",
+      "pass": true,
+      "detail": "22 → 10"
+    },
+    {
+      "name": "회전 PDF 2장 8MB 인코딩 횟수 비증가",
+      "pass": true,
+      "detail": "6 → 2"
+    },
+    {
+      "name": "여유 용량 PDF는 중간 회전 인코딩 없음",
+      "pass": true,
+      "detail": "2페이지 = 인코딩 2회 + 디코딩 2회"
+    },
+    {
+      "name": "PDF JPEG payload 전체 바이트 복사 제거",
+      "pass": true,
+      "detail": "JPEG 전체 arrayBuffer 읽기 0회"
+    }
+  ],
+  "samples": [
+    {
+      "caseName": "사진 200KB",
+      "version": "baseline",
+      "run": 1,
+      "encodes": 11,
+      "decodes": 1,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.96,
+        0.5,
+        0.73,
+        0.845,
+        0.7875,
+        0.8162499999999999,
+        0.830625,
+        0.8378125,
+        0.83421875
+      ],
+      "ms": 256.79999999701977,
+      "bytes": 197665,
+      "dimensions": "993×745"
+    },
+    {
+      "caseName": "사진 200KB",
+      "version": "current",
+      "run": 1,
+      "encodes": 9,
+      "decodes": 1,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.5,
+        0.96,
+        0.77,
+        0.82,
+        0.83,
+        0.89,
+        0.84
+      ],
+      "ms": 252,
+      "bytes": 197665,
+      "dimensions": "993×745"
+    },
+    {
+      "caseName": "사진 200KB",
+      "version": "current",
+      "run": 2,
+      "encodes": 9,
+      "decodes": 1,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.5,
+        0.96,
+        0.77,
+        0.82,
+        0.83,
+        0.89,
+        0.84
+      ],
+      "ms": 220.10000000149012,
+      "bytes": 197665,
+      "dimensions": "993×745"
+    },
+    {
+      "caseName": "사진 200KB",
+      "version": "baseline",
+      "run": 2,
+      "encodes": 11,
+      "decodes": 1,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.96,
+        0.5,
+        0.73,
+        0.845,
+        0.7875,
+        0.8162499999999999,
+        0.830625,
+        0.8378125,
+        0.83421875
+      ],
+      "ms": 227.5,
+      "bytes": 197665,
+      "dimensions": "993×745"
+    },
+    {
+      "caseName": "사진 200KB",
+      "version": "baseline",
+      "run": 3,
+      "encodes": 11,
+      "decodes": 1,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.96,
+        0.5,
+        0.73,
+        0.845,
+        0.7875,
+        0.8162499999999999,
+        0.830625,
+        0.8378125,
+        0.83421875
+      ],
+      "ms": 239.19999999552965,
+      "bytes": 197665,
+      "dimensions": "993×745"
+    },
+    {
+      "caseName": "사진 200KB",
+      "version": "current",
+      "run": 3,
+      "encodes": 9,
+      "decodes": 1,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.5,
+        0.96,
+        0.77,
+        0.82,
+        0.83,
+        0.89,
+        0.84
+      ],
+      "ms": 265.3999999985099,
+      "bytes": 197665,
+      "dimensions": "993×745"
+    },
+    {
+      "caseName": "사진 500KB",
+      "version": "baseline",
+      "run": 1,
+      "encodes": 11,
+      "decodes": 1,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.96,
+        0.5,
+        0.73,
+        0.615,
+        0.6725,
+        0.7012499999999999,
+        0.715625,
+        0.7228125,
+        0.7264062499999999
+      ],
+      "ms": 362.80000000447035,
+      "bytes": 486862,
+      "dimensions": "1571×1178"
+    },
+    {
+      "caseName": "사진 500KB",
+      "version": "current",
+      "run": 1,
+      "encodes": 7,
+      "decodes": 1,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.5,
+        0.96,
+        0.68,
+        0.72,
+        0.73
+      ],
+      "ms": 279.6000000014901,
+      "bytes": 486862,
+      "dimensions": "1571×1178"
+    },
+    {
+      "caseName": "사진 500KB",
+      "version": "current",
+      "run": 2,
+      "encodes": 7,
+      "decodes": 1,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.5,
+        0.96,
+        0.68,
+        0.72,
+        0.73
+      ],
+      "ms": 304.5,
+      "bytes": 486862,
+      "dimensions": "1571×1178"
+    },
+    {
+      "caseName": "사진 500KB",
+      "version": "baseline",
+      "run": 2,
+      "encodes": 11,
+      "decodes": 1,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.96,
+        0.5,
+        0.73,
+        0.615,
+        0.6725,
+        0.7012499999999999,
+        0.715625,
+        0.7228125,
+        0.7264062499999999
+      ],
+      "ms": 370.20000000298023,
+      "bytes": 486862,
+      "dimensions": "1571×1178"
+    },
+    {
+      "caseName": "사진 500KB",
+      "version": "baseline",
+      "run": 3,
+      "encodes": 11,
+      "decodes": 1,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.96,
+        0.5,
+        0.73,
+        0.615,
+        0.6725,
+        0.7012499999999999,
+        0.715625,
+        0.7228125,
+        0.7264062499999999
+      ],
+      "ms": 323.79999999701977,
+      "bytes": 486862,
+      "dimensions": "1571×1178"
+    },
+    {
+      "caseName": "사진 500KB",
+      "version": "current",
+      "run": 3,
+      "encodes": 7,
+      "decodes": 1,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.5,
+        0.96,
+        0.68,
+        0.72,
+        0.73
+      ],
+      "ms": 266.5,
+      "bytes": 486862,
+      "dimensions": "1571×1178"
+    },
+    {
+      "caseName": "회전 PDF 2장 1MB",
+      "version": "baseline",
+      "run": 1,
+      "encodes": 22,
+      "decodes": 6,
+      "jpegReads": 2,
+      "jpegReadBytes": 969608,
+      "qualities": [
+        0.96,
+        0.96,
+        0.96,
+        0.5,
+        0.73,
+        0.845,
+        0.9025,
+        0.87375,
+        0.859375,
+        0.8665625,
+        0.8629687500000001,
+        0.96,
+        0.96,
+        0.96,
+        0.5,
+        0.73,
+        0.845,
+        0.9025,
+        0.87375,
+        0.888125,
+        0.8809375,
+        0.8773437500000001
+      ],
+      "ms": 2876,
+      "bytes": 970789,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF 2장 1MB",
+      "version": "current",
+      "run": 1,
+      "encodes": 14,
+      "decodes": 2,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.79,
+        0.86,
+        0.88,
+        0.92,
+        0.89,
+        0.96,
+        0.5,
+        0.79,
+        0.86,
+        0.88,
+        0.92,
+        0.89
+      ],
+      "ms": 524.8000000044703,
+      "bytes": 967705,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF 2장 1MB",
+      "version": "current",
+      "run": 2,
+      "encodes": 14,
+      "decodes": 2,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.79,
+        0.86,
+        0.88,
+        0.92,
+        0.89,
+        0.96,
+        0.5,
+        0.79,
+        0.86,
+        0.88,
+        0.92,
+        0.89
+      ],
+      "ms": 1504.7999999970198,
+      "bytes": 967705,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF 2장 1MB",
+      "version": "baseline",
+      "run": 2,
+      "encodes": 22,
+      "decodes": 6,
+      "jpegReads": 2,
+      "jpegReadBytes": 969608,
+      "qualities": [
+        0.96,
+        0.96,
+        0.96,
+        0.5,
+        0.73,
+        0.845,
+        0.9025,
+        0.87375,
+        0.859375,
+        0.8665625,
+        0.8629687500000001,
+        0.96,
+        0.96,
+        0.96,
+        0.5,
+        0.73,
+        0.845,
+        0.9025,
+        0.87375,
+        0.888125,
+        0.8809375,
+        0.8773437500000001
+      ],
+      "ms": 914.3000000044703,
+      "bytes": 970789,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF 2장 1MB",
+      "version": "baseline",
+      "run": 3,
+      "encodes": 22,
+      "decodes": 6,
+      "jpegReads": 2,
+      "jpegReadBytes": 969608,
+      "qualities": [
+        0.96,
+        0.96,
+        0.96,
+        0.5,
+        0.73,
+        0.845,
+        0.9025,
+        0.87375,
+        0.859375,
+        0.8665625,
+        0.8629687500000001,
+        0.96,
+        0.96,
+        0.96,
+        0.5,
+        0.73,
+        0.845,
+        0.9025,
+        0.87375,
+        0.888125,
+        0.8809375,
+        0.8773437500000001
+      ],
+      "ms": 1889.0999999940395,
+      "bytes": 970789,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF 2장 1MB",
+      "version": "current",
+      "run": 3,
+      "encodes": 14,
+      "decodes": 2,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.79,
+        0.86,
+        0.88,
+        0.92,
+        0.89,
+        0.96,
+        0.5,
+        0.79,
+        0.86,
+        0.88,
+        0.92,
+        0.89
+      ],
+      "ms": 541.6000000014901,
+      "bytes": 967705,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF JPEG 2장 1MB",
+      "version": "baseline",
+      "run": 1,
+      "encodes": 22,
+      "decodes": 6,
+      "jpegReads": 2,
+      "jpegReadBytes": 981407,
+      "qualities": [
+        0.96,
+        0.96,
+        0.96,
+        0.5,
+        0.73,
+        0.845,
+        0.9025,
+        0.87375,
+        0.859375,
+        0.8665625,
+        0.8629687500000001,
+        0.96,
+        0.96,
+        0.96,
+        0.5,
+        0.73,
+        0.845,
+        0.9025,
+        0.87375,
+        0.859375,
+        0.8665625,
+        0.8629687500000001
+      ],
+      "ms": 806.3000000044703,
+      "bytes": 982588,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF JPEG 2장 1MB",
+      "version": "current",
+      "run": 1,
+      "encodes": 10,
+      "decodes": 2,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.85,
+        0.87,
+        0.88,
+        0.96,
+        0.5,
+        0.86,
+        0.87,
+        0.88
+      ],
+      "ms": 381.59999999403954,
+      "bytes": 989378,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF JPEG 2장 1MB",
+      "version": "current",
+      "run": 2,
+      "encodes": 10,
+      "decodes": 2,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.85,
+        0.87,
+        0.88,
+        0.96,
+        0.5,
+        0.86,
+        0.87,
+        0.88
+      ],
+      "ms": 1429.8999999985099,
+      "bytes": 989378,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF JPEG 2장 1MB",
+      "version": "baseline",
+      "run": 2,
+      "encodes": 22,
+      "decodes": 6,
+      "jpegReads": 2,
+      "jpegReadBytes": 981407,
+      "qualities": [
+        0.96,
+        0.96,
+        0.96,
+        0.5,
+        0.73,
+        0.845,
+        0.9025,
+        0.87375,
+        0.859375,
+        0.8665625,
+        0.8629687500000001,
+        0.96,
+        0.96,
+        0.96,
+        0.5,
+        0.73,
+        0.845,
+        0.9025,
+        0.87375,
+        0.859375,
+        0.8665625,
+        0.8629687500000001
+      ],
+      "ms": 756.5,
+      "bytes": 982588,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF JPEG 2장 1MB",
+      "version": "baseline",
+      "run": 3,
+      "encodes": 22,
+      "decodes": 6,
+      "jpegReads": 2,
+      "jpegReadBytes": 981407,
+      "qualities": [
+        0.96,
+        0.96,
+        0.96,
+        0.5,
+        0.73,
+        0.845,
+        0.9025,
+        0.87375,
+        0.859375,
+        0.8665625,
+        0.8629687500000001,
+        0.96,
+        0.96,
+        0.96,
+        0.5,
+        0.73,
+        0.845,
+        0.9025,
+        0.87375,
+        0.859375,
+        0.8665625,
+        0.8629687500000001
+      ],
+      "ms": 767.6000000014901,
+      "bytes": 982588,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF JPEG 2장 1MB",
+      "version": "current",
+      "run": 3,
+      "encodes": 10,
+      "decodes": 2,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.5,
+        0.85,
+        0.87,
+        0.88,
+        0.96,
+        0.5,
+        0.86,
+        0.87,
+        0.88
+      ],
+      "ms": 1353.2000000029802,
+      "bytes": 989378,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF 2장 8MB",
+      "version": "baseline",
+      "run": 1,
+      "encodes": 6,
+      "decodes": 6,
+      "jpegReads": 2,
+      "jpegReadBytes": 2322978,
+      "qualities": [
+        0.96,
+        0.96,
+        0.96,
+        0.96,
+        0.96,
+        0.96
+      ],
+      "ms": 491,
+      "bytes": 2324162,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF 2장 8MB",
+      "version": "current",
+      "run": 1,
+      "encodes": 2,
+      "decodes": 2,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.96
+      ],
+      "ms": 226.80000000447035,
+      "bytes": 2305271,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF 2장 8MB",
+      "version": "current",
+      "run": 2,
+      "encodes": 2,
+      "decodes": 2,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.96
+      ],
+      "ms": 1218.5,
+      "bytes": 2305271,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF 2장 8MB",
+      "version": "baseline",
+      "run": 2,
+      "encodes": 6,
+      "decodes": 6,
+      "jpegReads": 2,
+      "jpegReadBytes": 2322978,
+      "qualities": [
+        0.96,
+        0.96,
+        0.96,
+        0.96,
+        0.96,
+        0.96
+      ],
+      "ms": 513,
+      "bytes": 2324162,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF 2장 8MB",
+      "version": "baseline",
+      "run": 3,
+      "encodes": 6,
+      "decodes": 6,
+      "jpegReads": 2,
+      "jpegReadBytes": 2322978,
+      "qualities": [
+        0.96,
+        0.96,
+        0.96,
+        0.96,
+        0.96,
+        0.96
+      ],
+      "ms": 553.3999999985099,
+      "bytes": 2324162,
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF 2장 8MB",
+      "version": "current",
+      "run": 3,
+      "encodes": 2,
+      "decodes": 2,
+      "jpegReads": 0,
+      "jpegReadBytes": 0,
+      "qualities": [
+        0.96,
+        0.96
+      ],
+      "ms": 270.79999999701977,
+      "bytes": 2305271,
+      "dimensions": "2200×1600 / 2200×1600"
+    }
+  ],
+  "summary": [
+    {
+      "caseName": "사진 200KB",
+      "version": "baseline",
+      "ms": 239.2,
+      "encodes": [
+        11,
+        11,
+        11
+      ],
+      "decodes": [
+        1,
+        1,
+        1
+      ],
+      "jpegReadBytes": [
+        0,
+        0,
+        0
+      ],
+      "bytes": [
+        197665,
+        197665,
+        197665
+      ],
+      "dimensions": "993×745"
+    },
+    {
+      "caseName": "사진 200KB",
+      "version": "current",
+      "ms": 252,
+      "encodes": [
+        9,
+        9,
+        9
+      ],
+      "decodes": [
+        1,
+        1,
+        1
+      ],
+      "jpegReadBytes": [
+        0,
+        0,
+        0
+      ],
+      "bytes": [
+        197665,
+        197665,
+        197665
+      ],
+      "dimensions": "993×745"
+    },
+    {
+      "caseName": "사진 500KB",
+      "version": "baseline",
+      "ms": 362.8,
+      "encodes": [
+        11,
+        11,
+        11
+      ],
+      "decodes": [
+        1,
+        1,
+        1
+      ],
+      "jpegReadBytes": [
+        0,
+        0,
+        0
+      ],
+      "bytes": [
+        486862,
+        486862,
+        486862
+      ],
+      "dimensions": "1571×1178"
+    },
+    {
+      "caseName": "사진 500KB",
+      "version": "current",
+      "ms": 279.6,
+      "encodes": [
+        7,
+        7,
+        7
+      ],
+      "decodes": [
+        1,
+        1,
+        1
+      ],
+      "jpegReadBytes": [
+        0,
+        0,
+        0
+      ],
+      "bytes": [
+        486862,
+        486862,
+        486862
+      ],
+      "dimensions": "1571×1178"
+    },
+    {
+      "caseName": "회전 PDF 2장 1MB",
+      "version": "baseline",
+      "ms": 1889.1,
+      "encodes": [
+        22,
+        22,
+        22
+      ],
+      "decodes": [
+        6,
+        6,
+        6
+      ],
+      "jpegReadBytes": [
+        969608,
+        969608,
+        969608
+      ],
+      "bytes": [
+        970789,
+        970789,
+        970789
+      ],
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF 2장 1MB",
+      "version": "current",
+      "ms": 541.6,
+      "encodes": [
+        14,
+        14,
+        14
+      ],
+      "decodes": [
+        2,
+        2,
+        2
+      ],
+      "jpegReadBytes": [
+        0,
+        0,
+        0
+      ],
+      "bytes": [
+        967705,
+        967705,
+        967705
+      ],
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF JPEG 2장 1MB",
+      "version": "baseline",
+      "ms": 767.6,
+      "encodes": [
+        22,
+        22,
+        22
+      ],
+      "decodes": [
+        6,
+        6,
+        6
+      ],
+      "jpegReadBytes": [
+        981407,
+        981407,
+        981407
+      ],
+      "bytes": [
+        982588,
+        982588,
+        982588
+      ],
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF JPEG 2장 1MB",
+      "version": "current",
+      "ms": 1353.2,
+      "encodes": [
+        10,
+        10,
+        10
+      ],
+      "decodes": [
+        2,
+        2,
+        2
+      ],
+      "jpegReadBytes": [
+        0,
+        0,
+        0
+      ],
+      "bytes": [
+        989378,
+        989378,
+        989378
+      ],
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF 2장 8MB",
+      "version": "baseline",
+      "ms": 513,
+      "encodes": [
+        6,
+        6,
+        6
+      ],
+      "decodes": [
+        6,
+        6,
+        6
+      ],
+      "jpegReadBytes": [
+        2322978,
+        2322978,
+        2322978
+      ],
+      "bytes": [
+        2324162,
+        2324162,
+        2324162
+      ],
+      "dimensions": "2200×1600 / 2200×1600"
+    },
+    {
+      "caseName": "회전 PDF 2장 8MB",
+      "version": "current",
+      "ms": 270.8,
+      "encodes": [
+        2,
+        2,
+        2
+      ],
+      "decodes": [
+        2,
+        2,
+        2
+      ],
+      "jpegReadBytes": [
+        0,
+        0,
+        0
+      ],
+      "bytes": [
+        2305271,
+        2305271,
+        2305271
+      ],
+      "dimensions": "2200×1600 / 2200×1600"
+    }
+  ]
+}
