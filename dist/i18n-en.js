@@ -320,6 +320,8 @@ window.PhotoSokEN = {
     '왼쪽 위': 'Top left', '오른쪽 위': 'Top right', '오른쪽 아래': 'Bottom right', '왼쪽 아래': 'Bottom left',
     '서류를 반듯하게': 'Straighten documents', '테두리 자르기 · 원근 보정': 'Crop edges · fix perspective',
     // v1.18
+    "사진 고르고 바로 줄이기": "Pick photos and shrink",
+    "목표 용량 바로 고르기": "Quick target size",
     "원하는 용량으로 딱": "Exactly the size you need",
     "100KB, 200KB, 500KB… 고르면 그 이하로 맞춰요. 원본 사진은 그대로 남아요.": "Pick 100 KB, 200 KB, 500 KB… and we fit under it. Your original stays as it is.",
     "사진 접근 권한을 묻지 않아요": "No photo access permission",

@@ -105,6 +105,18 @@
     pendingTitle = '';
   }).observe(queue, { attributes: true, attributeFilter: ['hidden'] });
 
+  // 맨 위 큰 카드: 목표 용량을 고르고 바로 사진 고르기
+  let heroTarget = 500000;
+  document.querySelectorAll('[data-hero-target]').forEach(b => b.addEventListener('click', () => {
+    heroTarget = Number(b.dataset.heroTarget);
+    document.querySelectorAll('[data-hero-target]').forEach(x => x.classList.toggle('on', x === b));
+  }));
+  $('heroGo')?.addEventListener('click', () => {
+    tiles.find(t => t.dataset.tool === 'compress')?.click();
+    document.querySelector(`[data-target="${heroTarget}"]`)?.click();
+    $('choose')?.click();
+  });
+
   // ---- 큰 숫자 결과 카드 ----
   const fmt = bytes => bytes >= 1e6 ? (bytes / 1e6).toFixed(bytes >= 1e7 ? 0 : 1) + 'MB' : Math.max(1, Math.round(bytes / 1e3)) + 'KB';
   let lastHero = '';
