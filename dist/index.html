@@ -11,14 +11,14 @@
   <link rel="preload" href="fonts/PretendardVariable-subset.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css"><link rel="stylesheet" href="document-editor.css"><link rel="stylesheet" href="file-delivery.css">
 </head>
-<body>
+<body data-screen="home">
 <svg class="svg-defs" aria-hidden="true"><defs>
 <symbol id="i-shrink" viewBox="0 0 24 24"><path d="M5 4H3v6h6M3 10l6-6M19 20h2v-6h-6m6 0-6 6"/><path d="M10 10h4v4h-4z"/></symbol>
 <symbol id="i-image" viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><circle cx="8" cy="8" r="1.25"/><path d="m4 17 5-5 3 3 3-5 5 7"/></symbol>
 <symbol id="i-resize" viewBox="0 0 24 24"><path d="M4 8V4h4m8 0h4v4m0 8v4h-4M8 20H4v-4M8 8h8v8H8z"/></symbol>
 <symbol id="i-convert" viewBox="0 0 24 24"><path d="M5 8a7 7 0 0 1 12-3l3 3m0-5v5h-5M19 16a7 7 0 0 1-12 3l-3-3m0 5v-5h5"/></symbol>
 <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></symbol>
-<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-5 6 5-6 5"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol><symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-5 6 5-6 5"/></symbol>
 <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 16v4h16v-4"/></symbol>
 <symbol id="i-lock" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4 4 7 8 9 4-2 8-5 8-9V6Z"/><path d="m8 12 3 3 5-6"/></symbol>
 <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
@@ -35,16 +35,21 @@
     <div class="hero-bar" id="heroBarWrap" hidden><div id="heroBar"></div></div>
     <p class="hero-caption" id="heroCaption">원하는 용량을 고르면 그 이하로 맞춰요. 원본은 그대로 남아요.</p>
   </section>
-  <nav class="tool-grid" aria-label="할 일 고르기">
-    <button type="button" class="tool" data-tool="compress"><span class="tool-icon"><svg><use href="#i-shrink"/></svg></span><span><strong>용량 줄이기</strong><small>목표 용량에 맞춤</small></span></button>
-    <button type="button" class="tool" data-tool="resize"><span class="tool-icon"><svg><use href="#i-resize"/></svg></span><span><strong>크기 조절</strong><small>긴 변 · 정확한 픽셀</small></span></button>
-    <button type="button" class="tool" data-tool="convert"><span class="tool-icon"><svg><use href="#i-convert"/></svg></span><span><strong>형식 변환</strong><small>JPG · PNG · WebP</small></span></button>
-    <button type="button" class="tool" data-tool="pdf"><span class="tool-icon"><svg><use href="#i-pdf"/></svg></span><span><strong>PDF로 모으기</strong><small>최대 20페이지</small></span></button>
-    <button type="button" class="tool" id="decoTile"><span class="tool-icon"><svg><use href="#i-sparkle"/></svg></span><span><strong>인스타 꾸미기</strong><small>필터 43종 · 직접 조절</small></span></button>
-    <button type="button" class="tool" id="textTile"><span class="tool-icon"><svg><use href="#i-text"/></svg></span><span><strong>글씨 넣기</strong><small>외곽선 · 워터마크</small></span></button>
-    <button type="button" class="tool" id="maskTile"><span class="tool-icon"><svg><use href="#i-mask"/></svg></span><span><strong>개인정보 가리기</strong><small>신분증 · 번호 · 얼굴</small></span></button>
-    <button type="button" class="tool" id="specTile"><span class="tool-icon"><svg><use href="#i-idcard"/></svg></span><span><strong>증명사진 규격</strong><small>자격증 · 여권 · 인화용</small></span></button>
+  <p class="list-label">자주 쓰는 기능</p>
+  <nav class="tool-list" aria-label="자주 쓰는 기능">
+    <button type="button" class="tool" data-tool="compress"><span class="tool-icon"><svg><use href="#i-shrink"/></svg></span><span><strong>용량 줄이기</strong><small>목표 용량에 맞춤</small></span><svg class="tool-chev"><use href="#i-chev"/></svg></button>
+    <button type="button" class="tool" id="specTile"><span class="tool-icon"><svg><use href="#i-idcard"/></svg></span><span><strong>증명사진 규격</strong><small>자격증 · 여권 · 인화용</small></span><svg class="tool-chev"><use href="#i-chev"/></svg></button>
+    <button type="button" class="tool" data-tool="resize"><span class="tool-icon"><svg><use href="#i-resize"/></svg></span><span><strong>크기 조절</strong><small>긴 변 · 정확한 픽셀</small></span><svg class="tool-chev"><use href="#i-chev"/></svg></button>
+    <button type="button" class="tool" data-tool="pdf"><span class="tool-icon"><svg><use href="#i-pdf"/></svg></span><span><strong>PDF로 모으기</strong><small>최대 20페이지</small></span><svg class="tool-chev"><use href="#i-chev"/></svg></button>
   </nav>
+  <p class="list-label">더 많은 도구</p>
+  <nav class="tool-list" aria-label="더 많은 도구">
+    <button type="button" class="tool" id="decoTile"><span class="tool-icon"><svg><use href="#i-sparkle"/></svg></span><span><strong>인스타 꾸미기</strong><small>필터 43종 · 직접 조절</small></span><svg class="tool-chev"><use href="#i-chev"/></svg></button>
+    <button type="button" class="tool" id="textTile"><span class="tool-icon"><svg><use href="#i-text"/></svg></span><span><strong>글씨 넣기</strong><small>외곽선 · 워터마크</small></span><svg class="tool-chev"><use href="#i-chev"/></svg></button>
+    <button type="button" class="tool" id="maskTile"><span class="tool-icon"><svg><use href="#i-mask"/></svg></span><span><strong>개인정보 가리기</strong><small>신분증 · 번호 · 얼굴</small></span><svg class="tool-chev"><use href="#i-chev"/></svg></button>
+    <button type="button" class="tool" data-tool="convert"><span class="tool-icon"><svg><use href="#i-convert"/></svg></span><span><strong>형식 변환</strong><small>JPG · PNG · WebP</small></span><svg class="tool-chev"><use href="#i-chev"/></svg></button>
+  </nav>
+  <div class="work-bar" id="workBar"><button type="button" class="icon-button" id="workBack" aria-label="처음 화면으로"><svg><use href="#i-back"/></svg></button><h1 id="workTitle">용량 줄이기</h1></div>
   <div class="workspace-heading"><span class="eyebrow">작업 선택</span><span>필요한 결과부터 골라보세요.</span></div>
   <div class="workflow-switch" aria-label="완성할 파일 선택"><button id="workflowPdf" aria-pressed="false"><svg><use href="#i-pdf"/></svg><span><strong>PDF로 모으기</strong><small>페이지·용량 정리</small></span></button><button id="workflowPhoto" class="selected" aria-pressed="true"><svg><use href="#i-image"/></svg><span><strong>사진으로 저장</strong><small>용량 · 크기 · 형식</small></span></button></div>
   <p id="pdfFlowHint" class="flow-hint" hidden>파일 담기 <span>→</span> 저장 조건 고르기 <span>→</span> 결과 확인</p>
@@ -57,7 +62,7 @@
       </div>
       <input type="file" id="files" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,.pdf,.jpg,.jpeg,.png,.webp,.heic,.heif" multiple hidden><input type="file" id="capture" accept="image/*" capture="environment" hidden><input type="file" id="gallery" accept="image/*" multiple hidden>
       <section id="queueSection" hidden>
-        <div class="queue-header"><h2>담은 페이지 <span id="count">0</span></h2><div><button id="addMore" class="small-button"><svg><use href="#i-plus"/></svg>추가</button><button id="clear" class="text-button muted">비우기</button></div></div>
+        <div class="queue-header"><h2><span id="queueLabel">담은 사진</span> <span id="count">0</span></h2><div><button id="addMore" class="small-button"><svg><use href="#i-plus"/></svg>추가</button><button id="clear" class="text-button muted">비우기</button></div></div>
         <div id="summary" class="summary" hidden><div><span>전체 용량</span><p><span id="totalBefore"></span><svg><use href="#i-arrow"/></svg><strong id="totalAfter"></strong></p></div><b id="saving"></b></div>
         <p id="staleNote" class="stale-note" hidden>이전 결과를 보관 중이에요. 새 설정은 다시 처리해야 적용돼요.</p>
         <div id="pdfResult" class="pdf-result" hidden><div class="pdf-result-top"><span class="result-icon"><svg><use href="#i-check"/></svg></span><div><strong id="pdfResultHeading">입력한 파일 조건 충족</strong><p id="pdfResultSummary"></p></div></div><ul id="pdfChecks" class="pdf-checks"></ul><p id="pdfResultWarning" class="helper align-left"></p><div class="pdf-result-actions"><button id="pdfPreview" class="small-button">페이지 미리보기</button><button id="pdfSave" class="primary"><svg><use href="#i-download"/></svg>PDF 저장</button></div><button id="pdfShare" class="share-all" hidden>PDF 바로 공유</button><p class="helper">저장할 파일의 용량·형식·페이지 수를 확인했어요.<br>제출처의 나머지 조건과 글자 가독성은 직접 확인해주세요.</p></div>
@@ -98,11 +103,12 @@
   <section class="trust-row" aria-label="앱 안내"><div><span class="trust-icon"><svg><use href="#i-check"/></svg></span><p><strong>원본과 따로 저장</strong><span>선택한 원본 파일은 바꾸지 않아요</span></p></div><div><span class="trust-icon"><svg><use href="#i-image"/></svg></span><p><strong>결과를 먼저 확인</strong><span>페이지와 사진을 살펴보고 저장해요</span></p></div><div><span class="trust-icon"><svg><use href="#i-lock"/></svg></span><p><strong>파일 전송 없이 처리</strong><span>변환 작업은 이 기기에서 진행돼요</span></p></div></section>
   <details class="faq"><summary>처리 범위와 저장 안내 <span>＋</span></summary><p>사진과 PDF를 함께 넣고 페이지를 순서대로 정리할 수 있어요. ‘글자 유지 · 합치기’는 기존 PDF의 글자를 유지하지만 목표 용량을 보장하지 않아요. ‘용량 맞추기’는 PDF 페이지도 사진으로 바꾸므로 글자 검색·입력 양식·전자서명이 유지되지 않아요. 암호로 보호된 PDF는 지원하지 않아요.</p><p>‘서류 보정’에서 네 모서리를 직접 움직여 테두리와 기울기를 맞출 수 있어요. 보정한 PDF 페이지는 사진으로 바뀝니다. 자동 테두리 인식이나 문자인식(OCR)은 지원하지 않아요.</p><p>파일당 40MB, 원본 합계 200MB, 전체 20페이지까지 처리해요. 아주 큰 사진은 최대 2,400만 화소로 줄어들 수 있어요. HEIC를 브라우저가 직접 열지 못하면 기기 안에서 PNG로 바꿔 처리해요. 변환은 최대 1,200만 화소·긴 변 4,096px로 제한하며, 3,200만 화소를 넘는 HEIC는 기기 보호를 위해 거절할 수 있어요.</p><p>사진·용량 맞춤 PDF의 촬영정보는 제외돼요. ‘글자 유지 · 합치기’는 기존 PDF 안의 정보나 사진 속 글자를 자동으로 지우지 않아요. 저장 버튼은 브라우저에 다운로드를 요청하며, 저장 창의 ‘파일 열기’나 ‘공유’로도 이어서 보낼 수 있어요. <a href="licenses.html">사용한 공개 소프트웨어</a></p></details>
 </main>
-<footer><span>사진쏙</span><p>파일 준비의 마지막 한 번.</p><span class="version">v1.17</span></footer>
+<div id="adSlot" aria-hidden="true"></div>
+<footer><span>사진쏙</span><p>파일 준비의 마지막 한 번.</p><span class="version">v1.18</span></footer>
 <div id="mobileBar" class="mobile-bar" hidden><div><strong id="mobileStatus"></strong><span id="mobileHint"></span></div><button id="mobileShare" class="small-button" hidden>공유</button><button id="mobileAction" class="primary">용량 줄이기</button></div>
 <div id="toast" class="toast" role="status" hidden></div>
 <dialog id="compareDialog"><div class="dialog-head"><h2>사진 비교하기</h2><button id="closeCompare" class="icon-button" aria-label="비교 닫기"><svg><use href="#i-close"/></svg></button></div><p id="compareName" class="compare-name"></p><div class="compare-stage"><img id="afterImage" alt="처리한 사진"><div id="beforeLayer"><img id="beforeImage" alt="원본 사진"></div><span class="before-badge">원본</span><span class="after-badge">결과</span><div id="splitLine"></div></div><label class="slider-label" for="compareRange">슬라이더를 움직여 전후를 비교하세요</label><input id="compareRange" type="range" min="0" max="100" value="50"><div class="compare-meta"><span id="beforeMeta"></span><svg><use href="#i-arrow"/></svg><strong id="afterMeta"></strong></div><button id="dialogSave" class="primary"><svg><use href="#i-download"/></svg>이 사진 저장하기</button></dialog>
 <dialog id="pdfPreviewDialog"><div class="dialog-head"><h2>PDF 페이지 확인</h2><button id="pdfClosePreview" class="icon-button" aria-label="PDF 미리보기 닫기"><svg><use href="#i-close"/></svg></button></div><div class="pdf-preview-controls"><button id="pdfPrevPage" class="small-button">이전</button><strong id="pdfPageCounter"></strong><button id="pdfNextPage" class="small-button">다음</button></div><div class="pdf-preview-scroll"><div id="pdfPageCanvas" class="pdf-page-canvas"><img id="pdfPageImage" alt="PDF에 들어가는 페이지 사진"></div></div><p id="pdfPreviewNote" class="helper">사진으로 만든 PDF는 글자 검색이 되지 않아요.</p><button id="pdfPreviewSave" class="primary">PDF 저장하기</button></dialog>
 <script src="native.js"></script><script src="home.js" defer></script><script src="quick.js" defer></script><script src="compress.js"></script><script src="pdf.js"></script><script src="pdf-tools.js"></script><script src="heic-support.js"></script><script src="document-editor.js"></script><script src="file-delivery.js"></script><script src="ui-copy.js"></script><script src="app.js"></script><script src="crop.js"></script><script src="text.js"></script><script src="decorate.js"></script><script src="face.js"></script><script src="idphoto.js"></script>
-<script src="mask.js"></script><script src="print.js"></script><script src="i18n-en.js"></script><script src="i18n.js"></script><script src="submission.js"></script><script src="pwa.js"></script>
+<script src="mask.js"></script><script src="print.js"></script><script src="sheet.js"></script><script src="onboard.js"></script><script src="i18n-en.js"></script><script src="i18n.js"></script><script src="submission.js"></script><script src="pwa.js"></script>
 </body></html>

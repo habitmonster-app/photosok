@@ -49,7 +49,7 @@ function filesFor(items){const seen=new Set();return items.filter(i=>i.result).m
 function canShareFiles(items){try{return !!(navigator.share&&navigator.canShare&&navigator.canShare({files:filesFor(items)}));}catch{return false;}}
 async function sharePhotos(items){const files=filesFor(items);if(!files.length)return;if(!canShareFiles(items)){toast('이 브라우저는 사진 직접 공유를 지원하지 않아요. 저장 후 보내주세요.');return;}try{await navigator.share({files});toast('공유 창으로 사진을 전달했어요.');}catch(e){if(e.name==='AbortError')return;toast('공유 창을 열지 못했어요. 사진을 저장한 뒤 보내주세요.',true);}}
 
-function render(){
+function render(){if($('queueLabel'))$('queueLabel').textContent=state.mode==='pdf'?'담은 페이지':'담은 사진';
  const has=state.items.length>0; $('dropZone').hidden=has;$('queueSection').hidden=!has;$('count').textContent=state.items.length;
  const list=$('photoList');list.replaceChildren();let cropFrame=null;try{const o=options();if(o.exactWidth&&o.fit==='cover')cropFrame={w:o.exactWidth,h:o.exactHeight};}catch{}
  for(const item of state.items){
@@ -62,7 +62,7 @@ function render(){
   else status.textContent=(item.sourceType==='pdf'?'PDF 페이지':fmt((item.originalFile||item.file).size))+' · '+(item.processing?'처리 중…':planText());detail.append(status);
   if(cropFrame&&item.faceNote&&item.sourceType!=='pdf'){const fn=document.createElement('p');fn.className='card-meta face-note'+(item.faceOk?' ok':' warn');fn.textContent=item.faceNote;detail.append(fn);}
   if(item.convertInfo?.converted){const meta=document.createElement('p');meta.className='card-meta';meta.textContent='HEIC 변환 완료'+(item.convertInfo.downsized?' · 메모리 보호를 위해 축소됨':'');detail.append(meta);}
-  const editActions=document.createElement('div');editActions.className='card-actions';if(cropFrame){const cb=button(item.crop?'자르기 다시 조절':'자르기 조절',()=>PhotoSokCrop.open(item,cropFrame.w,cropFrame.h));cb.className='crop-button';cb.disabled=state.busy;editActions.append(cb);if(!SPECS[state.spec]?.noRetouch&&!item.whiteBg){const wb=button('배경 흰색',()=>PhotoSokID.whiten(item));wb.disabled=state.busy;editActions.append(wb);}}const db=button(item.decoSpec?'꾸미기 고치기':'꾸미기',()=>PhotoSokDeco.open(item));db.disabled=state.busy;editActions.append(db);const tb=button(item.textSpec?'글씨 고치기':'글씨 넣기',()=>PhotoSokText.open(item));tb.disabled=state.busy;editActions.append(tb);const mk=button(item.masked?'더 가리기':'가리기',()=>PhotoSokMask.open(item));mk.disabled=state.busy;editActions.append(mk);const edit=button('서류 보정',()=>editItem(item));edit.disabled=state.busy;editActions.append(edit);if(item.editBackup){const restore=button('보정 전으로',()=>restoreItem(item));restore.disabled=state.busy;editActions.append(restore);}detail.append(editActions);
+  const editActions=document.createElement('div');editActions.className='card-actions';if(cropFrame){const cb=button(item.crop?'자르기 다시 조절':'자르기 조절',()=>PhotoSokCrop.open(item,cropFrame.w,cropFrame.h));cb.className='crop-button';cb.disabled=state.busy;editActions.append(cb);if(!SPECS[state.spec]?.noRetouch&&!item.whiteBg){const wb=button('배경 흰색',()=>PhotoSokID.whiten(item));wb.disabled=state.busy;editActions.append(wb);}}const db=button(item.decoSpec?'꾸미기 고치기':'꾸미기',()=>PhotoSokDeco.open(item));db.disabled=state.busy;editActions.append(db);const tb=button(item.textSpec?'글씨 고치기':'글씨 넣기',()=>PhotoSokText.open(item));tb.disabled=state.busy;editActions.append(tb);const mk=button(item.masked?'더 가리기':'가리기',()=>PhotoSokMask.open(item));mk.disabled=state.busy;editActions.append(mk);const edit=button('서류 보정',()=>editItem(item));edit.disabled=state.busy;editActions.append(edit);if(item.editBackup){const restore=button('보정 전으로',()=>restoreItem(item));restore.disabled=state.busy;editActions.append(restore);}window.PhotoSokSheet?.compact(editActions,itemTitle(item));detail.append(editActions);
   if(item.result&&item.stale){const prev=document.createElement('p');prev.className='photo-status stale';prev.textContent='이전 설정 결과 · 다시 처리하면 바뀌어요';detail.append(prev);}
   if(item.result?.metadataRemoved){const meta=document.createElement('p');meta.className='card-meta';meta.textContent='위치·촬영정보 제외됨';detail.append(meta);}
   if(item.result){const actions=document.createElement('div');actions.className='card-actions';actions.append(button('비교',()=>compare(item)),button('저장',()=>download(item)));if(canShareFiles([item]))actions.append(button('공유',()=>sharePhotos([item])));detail.append(actions);}
@@ -159,7 +159,7 @@ $('process').onclick=async()=>{
   catch(e){if(e.name!=='AbortError'){item.error=e.message||'사진을 처리하지 못했어요. 다른 사진으로 다시 시도해주세요.';if(item.result)item.stale=true;}}
   finally{item.processing=false;render();}
  }
- const cancelled=state.controller.signal.aborted;state.busy=false;state.controller=null;render();toast(cancelled?'중단했어요. 완료된 사진은 저장할 수 있어요.':successes+'장 처리 완료. 비교 후 저장해주세요.',!successes&&!cancelled);
+ const cancelled=state.controller.signal.aborted;state.busy=false;state.controller=null;render();if(successes&&window.PhotoSokScreen?.get()==='work')$('queueSection').scrollIntoView({behavior:'smooth',block:'start'});toast(cancelled?'중단했어요. 완료된 사진은 저장할 수 있어요.':successes+'장 처리 완료. 비교 후 저장해주세요.',!successes&&!cancelled);
 };
 $('cancel').onclick=()=>state.controller?.abort();
 const counted=new WeakSet();

@@ -40,6 +40,32 @@
       tile.disabled = busy && !on;
     });
   }
+  // ---- 두 화면: 처음 화면(기능 목록) ↔ 작업 화면 ----
+  // 기능을 누르면 작업 화면으로 넘어가고, 뒤로가기(화면 위 ‹, 안드로이드 뒤로)로 처음 화면에 돌아온다.
+  const body = document.body;
+  // 검사용: ?qa=classic 이면 예전처럼 한 화면에 모두 보인다 (자동 검사 스크립트 호환).
+  const classic = /[?&]qa=classic/.test(location.search);
+  if (classic) body.dataset.screen = 'classic';
+  const titleOf = tile => tile?.querySelector('strong')?.textContent || '';
+  function setScreen(screen, title) {
+    if (classic) return;
+    if (title) { $('workTitle').textContent = title; $('workTitle').dataset.ko = title; }
+    if (body.dataset.screen === screen) return;
+    body.dataset.screen = screen;
+    window.scrollTo(0, 0);
+  }
+  function goWork(title) {
+    if (body.dataset.screen !== 'work') { try { history.pushState({ photosok: 'work' }, ''); } catch (_) {} }
+    setScreen('work', title);
+  }
+  function goHome() {
+    if (body.dataset.screen !== 'work') return;
+    if (history.state?.photosok === 'work') history.back(); else setScreen('home');
+  }
+  window.addEventListener('popstate', () => { if (body.dataset.screen === 'work') setScreen('home'); });
+  $('workBack')?.addEventListener('click', goHome);
+  window.PhotoSokScreen = Object.freeze({ goWork, goHome, get: () => body.dataset.screen });
+
   tiles.forEach(tile => tile.addEventListener('click', () => {
     const tool = tile.dataset.tool;
     if (tool === 'pdf') $('workflowPdf').click();
@@ -48,25 +74,36 @@
       document.querySelector(`.mode[data-mode="${tool}"]`)?.click();
     }
     syncTiles();
-    document.querySelector('.workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    goWork(titleOf(tile));
   }));
 
-  $('decoTile')?.addEventListener('click', () => {
+  // 꾸미기·글씨·가리기는 사진을 고르면 바로 편집 창이 열린다. 사진이 담기면 작업 화면으로 넘어간다.
+  let pendingTitle = '';
+  const directTool = (id, start) => $(id)?.addEventListener('click', () => {
     if (state.mode === 'pdf') $('workflowPhoto').click();
-    window.PhotoSokDeco?.start();
+    pendingTitle = titleOf($(id));
+    if (state.items.length) goWork(pendingTitle);
+    start();
   });
-  $('textTile')?.addEventListener('click', () => {
-    if (state.mode === 'pdf') $('workflowPhoto').click();
-    window.PhotoSokText?.start();
-  });
-  $('maskTile')?.addEventListener('click', () => {
-    if (state.mode === 'pdf') $('workflowPhoto').click();
-    window.PhotoSokMask?.start();
-  });
+  directTool('decoTile', () => window.PhotoSokDeco?.start());
+  directTool('textTile', () => window.PhotoSokText?.start());
+  directTool('maskTile', () => window.PhotoSokMask?.start());
   $('specTile')?.addEventListener('click', () => {
-    document.querySelector('.tool[data-tool="compress"]')?.click();
-    const d = $('specDetails'); if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }
+    $('workflowPhoto').click();
+    document.querySelector('.mode[data-mode="compress"]')?.click();
+    syncTiles();
+    goWork(titleOf($('specTile')));
+    const d = $('specDetails'); if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80); }
   });
+  // 공유받기·다른 경로로 사진이 담기면 작업 화면을 보여 준다.
+  const queue = $('queueSection');
+  if (queue) new MutationObserver(() => {
+    if (!queue.hidden && body.dataset.screen !== 'work') {
+      const t = pendingTitle || titleOf(tiles.find(t => t.dataset.tool === currentTool()));
+      goWork(t);
+    }
+    pendingTitle = '';
+  }).observe(queue, { attributes: true, attributeFilter: ['hidden'] });
 
   // ---- 큰 숫자 결과 카드 ----
   const fmt = bytes => bytes >= 1e6 ? (bytes / 1e6).toFixed(bytes >= 1e7 ? 0 : 1) + 'MB' : Math.max(1, Math.round(bytes / 1e3)) + 'KB';
@@ -130,7 +167,10 @@
 // 안드로이드 뒤로가기: 열린 창이 있으면 맨 위 창부터 닫는다 (Esc와 같은 동작).
 window.PhotoSokBack = () => {
   const open = [...document.querySelectorAll('dialog[open]')];
-  if (!open.length) return false;
+  if (!open.length) {
+    if (window.PhotoSokScreen?.get() === 'work') { window.PhotoSokScreen.goHome(); return true; }
+    return false;
+  }
   const d = open[open.length - 1];
   const ev = new Event('cancel', { cancelable: true });
   d.dispatchEvent(ev);
