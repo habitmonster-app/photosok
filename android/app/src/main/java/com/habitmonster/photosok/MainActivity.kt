@@ -511,7 +511,6 @@ class MainActivity : Activity() {
         fun takeShared(): String = synchronized(pendingShared) {
             val list = JSONArray(pendingShared.toList()); pendingShared.clear(); list.toString()
         }
-    }
 
         // ---- 공간 확보 ----
         @JavascriptInterface
