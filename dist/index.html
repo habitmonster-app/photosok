@@ -50,9 +50,9 @@
     <section class="photos-panel" aria-label="사진 선택 및 결과">
       <div id="dropZone" class="dropzone">
         <div class="drop-art" aria-hidden="true"><svg><use href="#i-plus"/></svg></div>
-        <h2>사진과 PDF를 담아주세요</h2><p class="desktop-copy">파일을 끌어 놓아도 좋아요.</p><button id="choose" class="primary choose"><svg><use href="#i-plus"/></svg>파일 담기</button><button id="camera" class="camera-button"><svg><use href="#i-image"/></svg>카메라로 담기</button><p class="file-hint">JPG · PNG · WebP · 한 번에 최대 20장</p><button id="demo" class="text-button">샘플 서류로 살펴보기 <span aria-hidden="true">↗</span></button>
+        <h2>사진과 PDF를 담아주세요</h2><p class="desktop-copy">파일을 끌어 놓아도 좋아요.</p><button id="choose" class="primary choose"><svg><use href="#i-plus"/></svg>파일 담기</button><button id="camera" class="camera-button"><svg><use href="#i-image"/></svg>카메라로 담기</button><button id="fromFiles" class="text-button" hidden>파일 앱에서 고르기 (PDF 포함)</button><p class="file-hint">JPG · PNG · WebP · 한 번에 최대 20장</p><button id="demo" class="text-button">샘플 서류로 살펴보기 <span aria-hidden="true">↗</span></button>
       </div>
-      <input type="file" id="files" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,.pdf,.jpg,.jpeg,.png,.webp,.heic,.heif" multiple hidden><input type="file" id="capture" accept="image/*" capture="environment" hidden>
+      <input type="file" id="files" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,.pdf,.jpg,.jpeg,.png,.webp,.heic,.heif" multiple hidden><input type="file" id="capture" accept="image/*" capture="environment" hidden><input type="file" id="gallery" accept="image/*" multiple hidden>
       <section id="queueSection" hidden>
         <div class="queue-header"><h2>담은 페이지 <span id="count">0</span></h2><div><button id="addMore" class="small-button"><svg><use href="#i-plus"/></svg>추가</button><button id="clear" class="text-button muted">비우기</button></div></div>
         <div id="summary" class="summary" hidden><div><span>전체 용량</span><p><span id="totalBefore"></span><svg><use href="#i-arrow"/></svg><strong id="totalAfter"></strong></p></div><b id="saving"></b></div>

@@ -71,7 +71,7 @@ function render(){
  if(done.length){const before=[...new Set(done.map(i=>i.originalFile||i.file))].reduce((s,f)=>s+f.size,0),after=done.reduce((s,i)=>s+i.result.blob.size,0);$('totalBefore').textContent=fmt(before);$('totalAfter').textContent=fmt(after);const pct=Math.round((1-after/before)*100);$('saving').textContent=done.some(i=>i.sourceType==='pdf')?'페이지 → 사진':pct>=0?'-'+pct+'%':'+'+Math.abs(pct)+'%';$('saveAll').querySelector('span').textContent=done.length>1?done.length+(window.PhotoSokApp?'장 모두 갤러리에 저장':'장 모두 저장 (ZIP)'):'사진 저장하기';}
  $('process').disabled=!has||state.busy;$('process').querySelector('span').textContent=state.busy?(state.importing?PhotoSokCopy.actions.importing:PhotoSokCopy.actions.photoBusy):!has?PhotoSokCopy.actions.empty:state.items.length+'장 '+names[state.mode];
  $('cancel').hidden=!state.busy;$('progressWrap').hidden=!state.busy;$('clear').disabled=state.busy;$('addMore').disabled=state.busy;$('choose').disabled=state.busy;$('demo').disabled=state.busy;
- $('camera').disabled=state.busy;
+ $('camera').disabled=state.busy;$('fromFiles').disabled=state.busy;
  document.querySelectorAll('.modes button,.preset-grid button,[data-quality],[data-spec],input[name=fit],#customToggle,#customSize,#maxEdge,#customEdge,#format,#exactSize,#exactWidth,#exactHeight,[data-dimensions]').forEach(el=>el.disabled=state.busy);
  updateOutputNote();
  const allCurrent=has&&state.items.every(i=>i.result&&!i.stale&&!i.error);$('mobileBar').hidden=!has;document.body.classList.toggle('has-mobile-bar',has);$('mobileStatus').textContent=state.busy?'사진 처리 중…':allCurrent?'완료 · '+done.length+'장':state.items.length+'장 선택';$('mobileHint').textContent=allCurrent?$('totalBefore').textContent+' → '+$('totalAfter').textContent:stale?'새 설정으로 다시 처리해주세요':'원본은 그대로 보관돼요';$('mobileAction').textContent=state.busy?'중단':allCurrent?'저장하기':names[state.mode];$('mobileAction').dataset.action=state.busy?'cancel':allCurrent?'save':'process';$('mobileShare').hidden=!allCurrent||!canShareFiles(done);
@@ -136,9 +136,11 @@ async function addFiles(files){
   $('progress').value=(at+1)/list.length*100;
  }}finally{const cancelled=signal.aborted;state.busy=false;state.importing=false;state.controller=null;render();if(skipped)problems.push('전체 20페이지까지 선택할 수 있어요.');if(problems.length)toast([...new Set(problems)].join(' '),true);else if(cancelled)toast('불러오기를 중단했어요. 추가된 페이지는 그대로예요.');else if(added)toast(added+'페이지를 추가했어요.');}
 }
-$('choose').onclick=$('addMore').onclick=()=>$('files').click();
+// 앱에서는 사진 고르기를 갤러리(안드로이드 사진 선택 화면)로, PDF는 파일 앱으로.
+$('choose').onclick=$('addMore').onclick=()=>$(window.PhotoSokApp&&state.mode!=='pdf'?'gallery':'files').click();
+$('fromFiles').hidden=!window.PhotoSokApp;$('fromFiles').onclick=()=>$('files').click();
 $('camera').onclick=()=>$('capture').click();
-$('files').onchange=$('capture').onchange=e=>{addFiles(e.target.files);e.target.value='';};
+$('files').onchange=$('capture').onchange=$('gallery').onchange=e=>{addFiles(e.target.files);e.target.value='';};
 $('clear').onclick=()=>{if(state.busy)return;for(const i of state.items)disposeItem(i);state.items=[];void PDFTools.clear();render();};
 let dragDepth=0;document.addEventListener('dragover',e=>{e.preventDefault();});document.addEventListener('drop',e=>{e.preventDefault();dragDepth=0;$('dropZone').classList.remove('dragover');if(e.dataTransfer.files.length)addFiles(e.dataTransfer.files);});$('dropZone').addEventListener('dragenter',()=>{dragDepth++;$('dropZone').classList.add('dragover');});$('dropZone').addEventListener('dragleave',()=>{if(--dragDepth<=0)$('dropZone').classList.remove('dragover');});
 document.querySelectorAll('.mode').forEach(button => { button.onclick = () => selectPhotoMode(button.dataset.mode); });

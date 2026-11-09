@@ -164,13 +164,28 @@ class MainActivity : Activity() {
     // ---- 파일 고르기 / 카메라 ----
     private fun openPicker(params: WebChromeClient.FileChooserParams): Boolean {
         val types = params.acceptTypes.flatMap { it.split(',') }.map { it.trim() }.filter { it.contains('/') }.distinct()
+        val multiple = params.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE
+        // 사진만 고를 때는 안드로이드 사진 선택 화면(갤러리처럼 앨범·최근 사진)을 쓴다. 권한 요청 없음.
+        if (types.isNotEmpty() && types.all { it.startsWith("image/") } && photoPickerAvailable()) {
+            val pick = Intent(MediaStore.ACTION_PICK_IMAGES).apply {
+                type = "image/*"
+                if (multiple) putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, minOf(20, MediaStore.getPickImagesMaxLimit()))
+            }
+            try { startActivityForResult(pick, PICK); return true } catch (e: Exception) { /* 아래 파일 선택으로 */ }
+        }
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = if (types.size == 1) types[0] else "*/*"
             if (types.size > 1) putExtra(Intent.EXTRA_MIME_TYPES, types.toTypedArray())
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, params.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE)
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, multiple)
         }
         return try { startActivityForResult(intent, PICK); true } catch (e: Exception) { cancelChooser(); false }
+    }
+
+    private fun photoPickerAvailable(): Boolean = when {
+        Build.VERSION.SDK_INT >= 33 -> true
+        Build.VERSION.SDK_INT >= 30 -> android.os.ext.SdkExtensions.getExtensionVersion(Build.VERSION_CODES.R) >= 2
+        else -> false
     }
 
     private fun openCamera(): Boolean {
