@@ -35,6 +35,21 @@
     }
   }
 
+  // Cover layout shared by the engine and the crop editor. crop.x/crop.y
+  // (0..1, 0.5 = centre) choose which part of the overflow stays in the
+  // frame; crop.zoom (1..4) enlarges beyond the minimum cover scale.
+  function coverLayout(orientedWidth, orientedHeight, width, height, crop) {
+    const c = normCrop(crop);
+    const scale = Math.max(width / orientedWidth, height / orientedHeight) * c.zoom;
+    const overflowX = Math.max(0, orientedWidth * scale - width);
+    const overflowY = Math.max(0, orientedHeight * scale - height);
+    return { scale, overflowX, overflowY, dx: (0.5 - c.x) * overflowX, dy: (0.5 - c.y) * overflowY };
+  }
+  function normCrop(crop) {
+    const n = (v, lo, hi, d) => Number.isFinite(Number(v)) ? clamp(Number(v), lo, hi) : d;
+    return { x: n(crop?.x, 0, 1, 0.5), y: n(crop?.y, 0, 1, 0.5), zoom: n(crop?.zoom, 1, 4, 1) };
+  }
+
   async function decode(file, signal) {
     abort(signal);
     if (typeof createImageBitmap === 'function') {
@@ -135,17 +150,17 @@
         if (format === 'image/jpeg') { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height); }
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-        let drawWidth, drawHeight;
+        let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
         if (exact) {
           // pad: fit the complete picture into the fixed frame; never stretch,
           // crop, or enlarge the source. White letterboxing fills the rest.
           // cover: scale so the frame is fully covered (never stretched) and
           // let the canvas clip the centred overflow.
-          const fit = fitMode === 'cover'
-            ? Math.max(width / orientedWidth, height / orientedHeight)
-            : Math.min(1, width / orientedWidth, height / orientedHeight);
+          const layout = fitMode === 'cover' ? coverLayout(orientedWidth, orientedHeight, width, height, options.crop) : null;
+          const fit = layout ? layout.scale : Math.min(1, width / orientedWidth, height / orientedHeight);
           drawWidth = originalWidth * fit;
           drawHeight = originalHeight * fit;
+          if (layout) { offsetX = layout.dx; offsetY = layout.dy; }
         } else {
           drawWidth = quarterTurn ? height : width;
           drawHeight = quarterTurn ? width : height;
@@ -153,7 +168,7 @@
         // Rotate the decoded source directly: no lossy intermediate JPEG or
         // second full-size bitmap. Exact frames retain their chosen dimensions.
         ctx.save();
-        ctx.translate(width / 2, height / 2);
+        ctx.translate(width / 2 + offsetX, height / 2 + offsetY);
         ctx.rotate(rotation * Math.PI / 180);
         ctx.drawImage(source.image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
         ctx.restore();
@@ -307,5 +322,5 @@
     return new Blob([...chunks, ...central, end], { type: 'application/zip' });
   }
 
-  window.PhotoEngine = Object.freeze({ transform, compress, formatBytes, downloadName, zip });
+  window.PhotoEngine = Object.freeze({ transform, compress, formatBytes, downloadName, zip, decode, coverLayout });
 })();
