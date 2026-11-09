@@ -69,7 +69,7 @@
     { id: '1.91:1', name: '가로 1.91:1', w: 1080, h: 566 },
   ];
   const FITS = [{ id: 'cover', name: '꽉 채우기' }, { id: 'white', name: '흰 여백' }, { id: 'black', name: '검정 여백' }, { id: 'blur', name: '흐린 배경' }];
-  const DEFAULT = { filter: 'none', strength: 100, ratio: 'orig', fit: 'cover', crop: { x: .5, y: .5, zoom: 1 }, adj: {} };
+  const DEFAULT = { filter: 'none', strength: 100, ratio: 'orig', fit: 'cover', crop: { x: .5, y: .5, zoom: 1 }, adj: {}, frame: 'none' };
   let dialog, canvas, session = null, pending = false;
 
   function params(id, strength, adj = {}) {
@@ -117,7 +117,59 @@
   }
 
   // 비율 + 필터를 적용해 w×h 캔버스에 그린다. src 는 회전까지 반영된 캔버스.
+  // 테두리·프레임: 결과 크기(인스타 비율)는 그대로 두고, 사진이 들어갈 안쪽 칸을 정한다.
+  const FRAMES = [
+    { id: 'none', name: '없음' }, { id: 'white', name: '흰 테두리' }, { id: 'black', name: '검정 테두리' },
+    { id: 'polaroid', name: '폴라로이드' }, { id: 'round', name: '둥근 모서리' }, { id: 'film', name: '필름' }, { id: 'date', name: '날짜 스탬프' },
+  ];
+  function frameInset(id, w, h) {
+    const m = Math.min(w, h);
+    if (id === 'white' || id === 'black') { const b = Math.round(m * .045); return { x: b, y: b, w: w - 2 * b, h: h - 2 * b }; }
+    if (id === 'polaroid') { const b = Math.round(m * .055), bottom = Math.round(h * .17); return { x: b, y: b, w: w - 2 * b, h: h - b - bottom }; }
+    if (id === 'round') { const b = Math.round(m * .035); return { x: b, y: b, w: w - 2 * b, h: h - 2 * b }; }
+    if (id === 'film') { const b = Math.round(h * .085), side = Math.round(w * .02); return { x: side, y: b, w: w - 2 * side, h: h - 2 * b }; }
+    return null;
+  }
+  function stampDate() { const d = session?.date || new Date(); return "'" + String(d.getFullYear()).slice(2) + ' ' + String(d.getMonth() + 1).padStart(2, '0') + ' ' + String(d.getDate()).padStart(2, '0'); }
   function compose(out, src, spec) {
+    const id = spec.frame || 'none', w = out.width, h = out.height;
+    const ins = frameInset(id, w, h);
+    if (!ins) { composeCore(out, src, spec); if (id === 'date') drawDate(out.getContext('2d'), w, h, spec); return; }
+    const tmp = document.createElement('canvas'); tmp.width = Math.max(1, ins.w); tmp.height = Math.max(1, ins.h);
+    composeCore(tmp, src, spec);
+    const ctx = out.getContext('2d');
+    ctx.save();
+    ctx.fillStyle = id === 'black' || id === 'film' ? '#0d0d0d' : id === 'polaroid' ? '#fbfaf6' : '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    if (id === 'round') {
+      const r = Math.min(ins.w, ins.h) * .07;
+      ctx.beginPath(); ctx.moveTo(ins.x + r, ins.y); ctx.arcTo(ins.x + ins.w, ins.y, ins.x + ins.w, ins.y + ins.h, r); ctx.arcTo(ins.x + ins.w, ins.y + ins.h, ins.x, ins.y + ins.h, r); ctx.arcTo(ins.x, ins.y + ins.h, ins.x, ins.y, r); ctx.arcTo(ins.x, ins.y, ins.x + ins.w, ins.y, r); ctx.closePath(); ctx.clip();
+    }
+    ctx.drawImage(tmp, ins.x, ins.y);
+    ctx.restore();
+    if (id === 'film') {
+      ctx.fillStyle = '#f3efe4';
+      const hole = ins.y * .36, gap = hole * 1.9;
+      for (let x = gap / 2; x < w; x += gap) for (const y of [ins.y / 2, h - ins.y / 2]) { ctx.beginPath(); const r = hole * .2; const x0 = x - hole / 2, y0 = y - hole / 2; ctx.moveTo(x0 + r, y0); ctx.arcTo(x0 + hole, y0, x0 + hole, y0 + hole, r); ctx.arcTo(x0 + hole, y0 + hole, x0, y0 + hole, r); ctx.arcTo(x0, y0 + hole, x0, y0, r); ctx.arcTo(x0, y0, x0 + hole, y0, r); ctx.fill(); }
+    }
+    if (id === 'polaroid' && spec.caption !== false) {
+      ctx.fillStyle = '#8a857a'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.font = `500 ${Math.round(Math.min(w, h) * .038)}px "Pretendard", sans-serif`;
+      ctx.fillText(stampDate().replace(/ /g, '.').replace("'", '20'), w - ins.x * 1.4, ins.y + ins.h + (h - ins.y - ins.h) / 2);
+    }
+    tmp.width = tmp.height = 1;
+  }
+  function drawDate(ctx, w, h) {
+    const px = Math.round(Math.min(w, h) * .045);
+    ctx.save();
+    ctx.font = `700 ${px}px "Courier New", ui-monospace, monospace`;
+    ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+    ctx.shadowColor = 'rgba(255,120,30,.9)'; ctx.shadowBlur = px * .45;
+    ctx.fillStyle = '#ff9a3c';
+    ctx.fillText(stampDate(), w - px * 1.2, h - px * 1.1);
+    ctx.restore();
+  }
+  function composeCore(out, src, spec) {
     const ctx = out.getContext('2d'), w = out.width, h = out.height;
     ctx.imageSmoothingQuality = 'high';
     const fit = spec.ratio === 'orig' ? 'cover' : spec.fit;
@@ -176,7 +228,10 @@
       <p class="deco-label">비율</p>
       <div class="text-row wrap" id="decoRatios" role="group" aria-label="인스타 비율">${RATIOS.map(r => `<button type="button" data-ratio="${r.id}">${r.name}</button>`).join('')}</div>
       <div class="text-row wrap" id="decoFits" role="group" aria-label="비율이 다를 때">${FITS.map(f => `<button type="button" data-fit="${f.id}">${f.name}</button>`).join('')}</div>
+      <p class="deco-label">테두리</p>
+      <div class="text-row wrap" id="decoFrames" role="group" aria-label="테두리">${FRAMES.map(f => `<button type="button" data-frame="${f.id}">${f.name}</button>`).join('')}</div>
       <label class="crop-zoom" id="decoZoomRow"><span>확대</span><input type="range" id="decoZoom" min="100" max="400" step="1" aria-label="확대"></label>
+      <button type="button" class="small-button apply-all" id="decoAll">모든 사진에 적용</button>
       <div class="crop-actions"><button type="button" class="small-button" id="decoApply">적용만</button><button type="button" class="primary" id="decoSave">꾸며서 저장</button></div>`;
     document.body.append(dialog);
     canvas = $('decoCanvas');
@@ -205,8 +260,10 @@
     $('decoZoom').oninput = () => { session.spec.crop.zoom = $('decoZoom').value / 100; schedule(); };
     dialog.querySelectorAll('[data-ratio]').forEach(b => b.onclick = () => { session.spec.ratio = b.dataset.ratio; session.spec.crop = { x: .5, y: .5, zoom: 1 }; resize(); sync(); schedule(); });
     dialog.querySelectorAll('[data-fit]').forEach(b => b.onclick = () => { session.spec.fit = b.dataset.fit; sync(); schedule(); });
-    $('decoApply').onclick = () => finish(false);
-    $('decoSave').onclick = () => finish(true);
+    dialog.querySelectorAll('[data-frame]').forEach(b => b.onclick = () => { session.spec.frame = b.dataset.frame; sync(); schedule(); });
+    $('decoApply').onclick = () => finish('apply');
+    $('decoSave').onclick = () => finish('save');
+    $('decoAll').onclick = () => finish('all');
     let last = null;
     canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); last = { x: e.clientX, y: e.clientY }; });
     canvas.addEventListener('pointermove', e => {
@@ -229,6 +286,7 @@
     const s = session.spec;
     dialog.querySelectorAll('[data-filter]').forEach(b => { const on = b.dataset.filter === s.filter; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
     dialog.querySelectorAll('[data-ratio]').forEach(b => { const on = b.dataset.ratio === s.ratio; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+    dialog.querySelectorAll('[data-frame]').forEach(b => { const on = b.dataset.frame === (s.frame || 'none'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
     dialog.querySelectorAll('[data-fit]').forEach(b => { const on = b.dataset.fit === s.fit; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
     $('decoFits').hidden = s.ratio === 'orig';
     $('decoZoomRow').hidden = !movable();
@@ -243,7 +301,7 @@
     const t = document.createElement('canvas'); const s = 72 / Math.max(session.preview.width, session.preview.height);
     t.width = Math.max(1, Math.round(session.preview.width * s)); t.height = Math.max(1, Math.round(session.preview.height * s));
     for (const f of [...myFilters().map(m => ({ id: 'my:' + m.id, name: '★ ' + m.name, p: m.p })), ...FILTERS]) {
-      compose(t, session.preview, { ...DEFAULT, filter: f.id, strength: 100, adj: {} });
+      composeCore(t, session.preview, { ...DEFAULT, filter: f.id, strength: 100, adj: {} });
       const b = document.createElement('button'); b.type = 'button'; b.dataset.filter = f.id;
       const img = document.createElement('img'); img.alt = ''; img.src = t.toDataURL('image/jpeg', .8);
       const span = document.createElement('span'); span.textContent = f.name;
@@ -265,56 +323,81 @@
     try {
       if (!base) { const input = await itemInputFile(item); base = { file: input, rotation: item.sourceType === 'pdf' ? 0 : (item.rotation || 0) }; }
       const preview = await oriented(base.file, base.rotation, 640);
-      session = { item, base, preview, spec: JSON.parse(JSON.stringify({ ...DEFAULT, ...(item.decoSpec || {}) })) };
+      session = { item, base, date: new Date((item.originalFile || item.file).lastModified || Date.now()), preview, spec: JSON.parse(JSON.stringify({ ...DEFAULT, ...(item.decoSpec || {}) })) };
       if (!session.spec.adj) session.spec.adj = {};
     } catch (e) { toast('사진을 열지 못했어요. 다시 시도해주세요.', true); return; }
     resize(); thumbs(); sync(); draw();
+    $('decoAll').hidden = state.items.filter(i => i.sourceType !== 'pdf').length < 2;
     dialog.showModal();
   }
 
-  async function finish(save) {
+  // 한 장에 꾸미기를 적용한다 (글씨가 있으면 꾸민 사진 위에 다시 얹는다).
+  async function applyTo(item, base, spec) {
+    if (session) session.date = new Date((item.originalFile || item.file).lastModified || Date.now());
+    const src = await oriented(base.file, base.rotation, 4096);
+    const f = frameSize(spec, src, spec.ratio === 'orig' ? 4096 : 1920);
+    const out = document.createElement('canvas'); out.width = f.w; out.height = f.h;
+    compose(out, src, spec);
+    src.width = src.height = 1;
+    const decoBlob = await new Promise(res => out.toBlob(res, 'image/jpeg', 0.95));
+    if (!decoBlob) throw new Error();
+    const stem = (item.originalFile?.name || item.file.name || '사진').replace(/\.[^.]+$/, '').replace(/_(글씨|꾸미기)$/, '');
+    let finalBlob = decoBlob;
+    if (item.textSpec && window.PhotoSokText) {
+      try { await document.fonts.load('700 40px Pretendard', item.textSpec.text); } catch (_) {}
+      const copy = document.createElement('canvas'); copy.width = out.width; copy.height = out.height;
+      copy.getContext('2d').drawImage(out, 0, 0);
+      PhotoSokText.paint(out.getContext('2d'), copy, out.width, out.height, item.textSpec);
+      copy.width = copy.height = 1;
+      finalBlob = await new Promise(res => out.toBlob(res, 'image/jpeg', 0.95));
+      item.textBase = { file: new File([decoBlob], stem + '_꾸미기.jpg', { type: 'image/jpeg' }), rotation: 0 };
+    }
+    const width = out.width, height = out.height; out.width = out.height = 1;
+    if (!item.editBackup) item.editBackup = { file: item.file, sourceType: item.sourceType, pageIndex: item.pageIndex, width: item.width, height: item.height, rotation: item.rotation, url: item.url };
+    else if (item.url !== item.editBackup.url) URL.revokeObjectURL(item.url);
+    item.decoBase = base; item.decoSpec = JSON.parse(JSON.stringify(spec));
+    const name = stem + '_꾸미기.jpg';
+    item.file = new File([finalBlob], name, { type: 'image/jpeg' });
+    item.sourceType = 'photo'; delete item.pageIndex;
+    item.url = URL.createObjectURL(item.file); item.width = width; item.height = height; item.rotation = 0;
+    touchItem(item);
+    return { blob: finalBlob, name };
+  }
+  async function baseFor(item) {
+    const b = baseOf(item); if (b) return b;
+    const input = await itemInputFile(item);
+    return { file: input, rotation: item.sourceType === 'pdf' ? 0 : (item.rotation || 0) };
+  }
+
+  async function finish(mode) {
     if (!session) return;
     const { item, base, spec } = session;
-    $('decoApply').disabled = $('decoSave').disabled = true;
+    const buttons = ['decoApply', 'decoSave', 'decoAll'].map($).filter(Boolean);
+    buttons.forEach(b => b.disabled = true);
     try {
-      const src = await oriented(base.file, base.rotation, 4096);
-      const f = frameSize(spec, src, spec.ratio === 'orig' ? 4096 : 1920);
-      const out = document.createElement('canvas'); out.width = f.w; out.height = f.h;
-      compose(out, src, spec);
-      src.width = src.height = 1;
-      const decoBlob = await new Promise(res => out.toBlob(res, 'image/jpeg', 0.95));
-      if (!decoBlob) throw new Error();
-      const stem = (item.originalFile?.name || item.file.name || '사진').replace(/\.[^.]+$/, '').replace(/_(글씨|꾸미기)$/, '');
-      let finalBlob = decoBlob;
-      if (item.textSpec && window.PhotoSokText) {
-        // 글씨가 있던 사진이면 꾸민 사진 위에 같은 글씨를 다시 얹는다.
-        try { await document.fonts.load('700 40px Pretendard', item.textSpec.text); } catch (_) {}
-        const copy = document.createElement('canvas'); copy.width = out.width; copy.height = out.height;
-        copy.getContext('2d').drawImage(out, 0, 0);
-        PhotoSokText.paint(out.getContext('2d'), copy, out.width, out.height, item.textSpec);
-        copy.width = copy.height = 1;
-        finalBlob = await new Promise(res => out.toBlob(res, 'image/jpeg', 0.95));
-        item.textBase = { file: new File([decoBlob], stem + '_꾸미기.jpg', { type: 'image/jpeg' }), rotation: 0 };
+      const r = await applyTo(item, base, spec);
+      if (mode === 'all') {
+        const others = state.items.filter(i => i !== item && i.sourceType !== 'pdf');
+        let n = 1;
+        for (const o of others) {
+          $('decoAll').textContent = '적용 중… ' + (n + 1) + ' / ' + (others.length + 1);
+          try { await applyTo(o, await baseFor(o), { ...JSON.parse(JSON.stringify(spec)), crop: { x: .5, y: .5, zoom: 1 } }); n++; } catch (_) {}
+        }
+        dialog.close(); render();
+        toast(n + '장에 같은 꾸미기를 적용했어요.');
+        return;
       }
-      const width = out.width, height = out.height; out.width = out.height = 1;
-      if (!item.editBackup) item.editBackup = { file: item.file, sourceType: item.sourceType, pageIndex: item.pageIndex, width: item.width, height: item.height, rotation: item.rotation, url: item.url };
-      else if (item.url !== item.editBackup.url) URL.revokeObjectURL(item.url);
-      item.decoBase = base; item.decoSpec = JSON.parse(JSON.stringify(spec));
-      const name = stem + '_꾸미기.jpg';
-      item.file = new File([finalBlob], name, { type: 'image/jpeg' });
-      item.sourceType = 'photo'; delete item.pageIndex;
-      item.url = URL.createObjectURL(item.file); item.width = width; item.height = height; item.rotation = 0;
-      touchItem(item);
       dialog.close();
       render();
-      if (save) {
-        const r = await FileDelivery.save(finalBlob, name);
-        if (r.status === 'saved') toast(r.message || '꾸민 사진을 저장했어요.');
-        else if (r.status === 'failed') toast(r.message || '저장하지 못했어요. 다시 시도해주세요.', true);
+      if (mode === 'save') {
+        const s = await FileDelivery.save(r.blob, r.name);
+        if (s.status === 'saved') toast(s.message || '꾸민 사진을 저장했어요.');
+        else if (s.status === 'failed') toast(s.message || '저장하지 못했어요. 다시 시도해주세요.', true);
       } else toast('꾸미기를 적용했어요. 글씨를 넣거나 용량을 줄일 수 있어요.');
     } catch (e) { toast('꾸미기를 적용하지 못했어요. 다시 시도해주세요.', true); }
-    finally { $('decoApply').disabled = $('decoSave').disabled = false; }
+    finally { buttons.forEach(b => b.disabled = false); if ($('decoAll')) $('decoAll').textContent = '모든 사진에 적용'; }
   }
+
 
   function start() {
     const first = state.items.find(i => i.sourceType !== 'pdf') || state.items[0];

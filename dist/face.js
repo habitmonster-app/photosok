@@ -15,7 +15,7 @@
   }
   function landmarker() {
     if (!landmarkerP) landmarkerP = vision().then(({ mod, fileset }) => mod.FaceLandmarker.createFromOptions(fileset, {
-      baseOptions: { modelAssetPath: BASE + 'face_landmarker.task', delegate: 'CPU' }, runningMode: 'IMAGE', numFaces: 3,
+      baseOptions: { modelAssetPath: BASE + 'face_landmarker.task', delegate: 'CPU' }, runningMode: 'IMAGE', numFaces: 10,
     })).catch(e => { landmarkerP = null; throw e; });
     return landmarkerP;
   }

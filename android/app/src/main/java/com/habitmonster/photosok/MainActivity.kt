@@ -109,7 +109,11 @@ class MainActivity : Activity() {
 
     @Deprecated("Activity back handling")
     override fun onBackPressed() {
-        if (web.canGoBack()) web.goBack() else super.onBackPressed()
+        // 열린 창(꾸미기·자르기·비교 등)이 있으면 그 창부터 닫고, 없을 때만 앱을 닫는다.
+        web.evaluateJavascript("(window.PhotoSokBack ? window.PhotoSokBack() : false)") { handled ->
+            if (handled == "true") return@evaluateJavascript
+            if (web.canGoBack()) web.goBack() else finish()
+        }
     }
 
     override fun onDestroy() {

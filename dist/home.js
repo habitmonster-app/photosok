@@ -59,6 +59,10 @@
     if (state.mode === 'pdf') $('workflowPhoto').click();
     window.PhotoSokText?.start();
   });
+  $('maskTile')?.addEventListener('click', () => {
+    if (state.mode === 'pdf') $('workflowPhoto').click();
+    window.PhotoSokMask?.start();
+  });
   $('specTile')?.addEventListener('click', () => {
     document.querySelector('.tool[data-tool="compress"]')?.click();
     const d = $('specDetails'); if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }
@@ -122,3 +126,14 @@
   document.addEventListener('photosok-saved', sync);
   sync();
 })();
+
+// 안드로이드 뒤로가기: 열린 창이 있으면 맨 위 창부터 닫는다 (Esc와 같은 동작).
+window.PhotoSokBack = () => {
+  const open = [...document.querySelectorAll('dialog[open]')];
+  if (!open.length) return false;
+  const d = open[open.length - 1];
+  const ev = new Event('cancel', { cancelable: true });
+  d.dispatchEvent(ev);
+  if (!ev.defaultPrevented && d.open) d.close();
+  return true;
+};
