@@ -95,6 +95,7 @@ class MainActivity : Activity() {
             }
         }
         web.addJavascriptInterface(Bridge(), "PhotoSokNative")
+        web.setBackgroundColor(0xFF101213.toInt())
         setContentView(web)
         web.loadUrl(START)
         handleIncoming(intent)
@@ -114,6 +115,19 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         web.destroy()
         super.onDestroy()
+    }
+
+    /** 상태바·내비게이션바 색을 화면 모드에 맞춘다. */
+    @Suppress("DEPRECATION")
+    private fun applyBars(dark: Boolean) {
+        val color = if (dark) 0xFF101213.toInt() else 0xFFF3F4F2.toInt()
+        window.statusBarColor = color
+        window.navigationBarColor = color
+        web.setBackgroundColor(color)
+        var flags = window.decorView.systemUiVisibility
+        flags = if (dark) flags and android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv() and android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
+                else flags or android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        window.decorView.systemUiVisibility = flags
     }
 
     // ---- 앱 안의 웹 파일 ----
@@ -318,6 +332,11 @@ class MainActivity : Activity() {
             JSONObject().put("status", "shared").toString()
         } catch (e: Exception) {
             JSONObject().put("status", "failed").put("message", "공유 창을 열지 못했어요.").toString()
+        }
+
+        @JavascriptInterface
+        fun setTheme(theme: String) {
+            runOnUiThread { applyBars(theme == "dark") }
         }
 
         @JavascriptInterface

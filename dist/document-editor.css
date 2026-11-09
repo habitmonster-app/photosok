@@ -6,13 +6,13 @@
   max-height:94dvh;
   padding:0;
   overflow:auto;
-  background:#fffefa;
-  color:#18353f;
-  border:1px solid #bdccc2;
+  background:var(--panel);
+  color:var(--text);
+  border:1px solid var(--line);
   border-radius:18px;
   overscroll-behavior:contain}
 .de-dialog::backdrop {
-  background:#132f3ac2;
+  background:var(--backdrop);
   backdrop-filter:blur(5px)}
 .de-dialog button {
   font:inherit;
@@ -22,7 +22,7 @@
   cursor:default;
   opacity:.5}
 .de-dialog button:focus-visible {
-  outline:3px solid #176e67;
+  outline:3px solid var(--accent);
   outline-offset:3px}
 .de-heading {
   display:flex;
@@ -33,7 +33,7 @@
 .de-eyebrow {
   font-size:12px;
   font-weight:600;
-  color:#176e67;
+  color:var(--accent);
   margin:0 0 6px}
 .de-heading h2 {
   font-size:19px;
@@ -44,14 +44,14 @@
   width:44px;
   height:44px;
   border-radius:50%;
-  border:1px solid #bdccc2;
-  background:#e7f1eb;
-  color:#176e67;
+  border:1px solid var(--line);
+  background:var(--accent-soft);
+  color:var(--accent);
   font-size:25px!important;
   line-height:1}
 .de-name {
   padding:0 23px;
-  color:#5c7074;
+  color:var(--muted);
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
@@ -63,32 +63,32 @@
   margin:0 23px;
   padding:4px;
   border-radius:9px;
-  background:#edf2ed;
-  border:1px solid #d8dfd8}
+  background:var(--subtle);
+  border:1px solid var(--line)}
 .de-mode button {
   flex:1;
   border:0;
   border-radius:6px;
   background:transparent;
-  color:#5c7074;
+  color:var(--muted);
   font-size:12px;
   padding:11px 8px}
 .de-mode button.is-selected {
-  background:#176e67;
-  color:#ffffff;
+  background:var(--accent);
+  color:var(--field);
   font-weight:700}
 .de-instructions {
   font-size:12px;
   line-height:1.7;
   margin:15px 23px 8px;
-  color:#18353f}
+  color:var(--text)}
 .de-instructions span {
-  color:#5c7074;
+  color:var(--muted);
   font-size:12px}
 .de-workarea {
-  background:#dfe7df;
-  border-top:1px solid #cbd7cd;
-  border-bottom:1px solid #cbd7cd;
+  background:var(--subtle);
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
   padding:25px 26px;
   margin-top:14px;
   min-height:160px;
@@ -120,7 +120,7 @@
   fill:#18353f77}
 .de-outline {
   fill:#ffffff05;
-  stroke:#176e67;
+  stroke:var(--accent);
   stroke-width:2;
   vector-effect:non-scaling-stroke;
   stroke-linejoin:round}
@@ -132,9 +132,9 @@
   display:grid;
   place-items:center;
   transform:translate(-50%,-50%);
-  background:#176e67;
-  border:2px solid #ffffff;
-  color:#ffffff;
+  background:var(--accent);
+  border:2px solid var(--field);
+  color:var(--field);
   font-size:12px!important;
   font-weight:800;
   line-height:1;
@@ -144,7 +144,7 @@
   -webkit-user-select:none;
   box-shadow:0 1px 7px #0009}
 .de-handle:hover,.de-handle:focus {
-  background:#238a7d}
+  background:var(--accent-strong)}
 .de-under-image {
   display:flex;
   justify-content:space-between;
@@ -152,10 +152,10 @@
   gap:10px;
   padding:10px 23px}
 .de-dimensions {
-  color:#5c7074;
+  color:var(--muted);
   font-size:12px}
 .de-reset {
-  color:#176e67;
+  color:var(--accent);
   background:none;
   border:0;
   font-size:12px!important;
@@ -170,16 +170,16 @@
   max-width:100%;
   max-height:min(48vh,520px);
   object-fit:contain;
-  background:white;
+  background: var(--field);
   box-shadow:0 2px 20px #0005}
 .de-error {
   font-size:12px;
   line-height:1.7;
   margin:3px 23px 12px;
   padding:10px 12px;
-  background:#fff0e8;
-  border:1px solid #e5baa7;
-  color:#98432b;
+  background:var(--warn-bg);
+  border:1px solid var(--warn-line);
+  color:var(--danger);
   border-radius:7px}
 .de-progress {
   padding:0 23px 10px}
@@ -187,21 +187,21 @@
   display:block;
   width:100%;
   height:5px;
-  accent-color:#176e67;
+  accent-color:var(--accent);
   margin:3px 0 7px}
 .de-progress p {
   font-size:12px;
-  color:#5c7074;
+  color:var(--muted);
   margin:0;
   text-align:center}
 .de-footer {
   position:sticky;
   bottom:0;
-  background:#fffefaf7;
+  background:var(--panel);
   display:flex;
   gap:8px;
   padding:13px 23px;
-  border-top:1px solid #d8dfd8;
+  border-top:1px solid var(--line);
   z-index:3}
 .de-footer button {
   height:44px;
@@ -210,23 +210,23 @@
   font-weight:600;
   padding:0 14px}
 .de-cancel {
-  background:#f0f3ed;
-  border:1px solid #c1d3c6;
-  color:#176e67}
+  background:var(--subtle);
+  border:1px solid var(--line);
+  color:var(--accent)}
 .de-preview-button {
-  background:#e7f1eb;
-  border:1px solid #bfd0c3;
-  color:#176e67;
+  background:var(--accent-soft);
+  border:1px solid var(--line);
+  color:var(--accent);
   flex:1}
 .de-apply {
-  background:#176e67;
-  color:#ffffff;
-  border:1px solid #176e67;
+  background:var(--accent);
+  color:var(--field);
+  border:1px solid var(--accent);
   flex:1}
 .de-footnote {
   padding:0 23px 17px;
   margin:0;
-  color:#5c7074;
+  color:var(--muted);
   font-size:12px;
   line-height:1.7}
 .de-dialog [hidden] {

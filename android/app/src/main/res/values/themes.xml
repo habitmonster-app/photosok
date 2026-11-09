@@ -4,9 +4,10 @@
         <item name="android:windowBackground">@color/paper</item>
         <item name="android:statusBarColor">@color/paper</item>
         <item name="android:navigationBarColor">@color/paper</item>
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
     </style>
-    <color name="paper">#F7F5EF</color>
+    <color name="paper">#101213</color>
     <color name="ink">#18353F</color>
+    <color name="clay">#D78365</color>
 </resources>
