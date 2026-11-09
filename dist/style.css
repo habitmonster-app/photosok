@@ -504,3 +504,16 @@ footer { border-top: 0; }
 .text-row button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 700; }
 .text-row.colors button { flex: 0 0 42px; height: 42px; padding: 0; background: var(--sw); border: 2px solid var(--line); }
 .text-row.colors button.on { border: 3px solid var(--accent); box-shadow: 0 0 0 2px var(--panel) inset; }
+
+/* v1.13 · 인스타 꾸미기 */
+#decoDialog { max-width: 520px; }
+#decoCanvas { display: block; max-width: 100%; max-height: 40dvh; width: auto; height: auto; border-radius: 4px; touch-action: none; cursor: grab; }
+.deco-label { margin: 14px 0 6px; font-size: 13px; font-weight: 700; color: var(--text); }
+.deco-filters { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+.deco-filters button { flex: 0 0 76px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 4px; border: 2px solid transparent; border-radius: 12px; background: none; color: var(--muted); font-size: 11px; scroll-snap-align: start; }
+.deco-filters img { width: 64px; height: 64px; object-fit: cover; border-radius: 9px; background: var(--subtle); }
+.deco-filters button.on { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.text-row.wrap { flex-wrap: wrap; }
+.text-row.wrap button { flex: 1 1 auto; padding: 0 12px; }
+.crop-zoom b { min-width: 42px; text-align: right; font-size: 12px; color: var(--muted); font-weight: 600; }
+.tool.wide { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: flex-start; min-height: 0; gap: 14px; }

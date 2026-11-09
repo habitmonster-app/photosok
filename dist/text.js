@@ -139,7 +139,7 @@
       const blob = await new Promise(res => out.toBlob(res, 'image/jpeg', 0.95));
       const width = out.width, height = out.height; out.width = out.height = 1;
       if (!blob) throw new Error();
-      const stem = (item.originalFile?.name || item.file.name || '사진').replace(/\.[^.]+$/, '');
+      const stem = (item.originalFile?.name || item.file.name || '사진').replace(/\.[^.]+$/, '').replace(/_(글씨|꾸미기)$/, '');
       if (!item.editBackup) item.editBackup = { file: item.file, sourceType: item.sourceType, pageIndex: item.pageIndex, width: item.width, height: item.height, rotation: item.rotation, url: item.url };
       else if (item.url !== item.editBackup.url) URL.revokeObjectURL(item.url);
       item.textBase = base; item.textSpec = { ...spec };

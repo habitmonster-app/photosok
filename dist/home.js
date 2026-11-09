@@ -51,6 +51,10 @@
     document.querySelector('.workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }));
 
+  $('decoTile')?.addEventListener('click', () => {
+    if (state.mode === 'pdf') $('workflowPhoto').click();
+    window.PhotoSokDeco?.start();
+  });
   $('textTile')?.addEventListener('click', () => {
     if (state.mode === 'pdf') $('workflowPhoto').click();
     window.PhotoSokText?.start();
