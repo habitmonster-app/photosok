@@ -93,6 +93,10 @@
     const stripMetadata = options.stripMetadata === true;
     const exact = options.exactWidth != null || options.exactHeight != null;
     const exactWidth = Number(options.exactWidth), exactHeight = Number(options.exactHeight);
+    // 'pad' keeps the whole picture with white margins; 'cover' fills the
+    // frame and trims the overflow evenly from the centre (ID photos must
+    // not have margins).
+    const fitMode = options.fit === 'cover' ? 'cover' : 'pad';
     if (exact && (mode !== 'compress' || !Number.isInteger(exactWidth) || !Number.isInteger(exactHeight) || exactWidth < 100 || exactWidth > 4000 || exactHeight < 100 || exactHeight > 4000 || exactWidth * exactHeight > 16000000)) {
       throw new Error('가로와 세로를 각각 100~4,000픽셀로 입력해 주세요.');
     }
@@ -133,9 +137,13 @@
         ctx.imageSmoothingQuality = 'high';
         let drawWidth, drawHeight;
         if (exact) {
-          // Fit the complete picture into the fixed frame; never stretch, crop,
-          // or enlarge the source. White letterboxing supplies any extra space.
-          const fit = Math.min(1, width / orientedWidth, height / orientedHeight);
+          // pad: fit the complete picture into the fixed frame; never stretch,
+          // crop, or enlarge the source. White letterboxing fills the rest.
+          // cover: scale so the frame is fully covered (never stretched) and
+          // let the canvas clip the centred overflow.
+          const fit = fitMode === 'cover'
+            ? Math.max(width / orientedWidth, height / orientedHeight)
+            : Math.min(1, width / orientedWidth, height / orientedHeight);
           drawWidth = originalWidth * fit;
           drawHeight = originalHeight * fit;
         } else {

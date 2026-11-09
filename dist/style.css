@@ -437,7 +437,7 @@ footer { border-top: 0; }
 .quick-grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 14px; }
 .quick-label { margin: 0; font-size: 13px; color: var(--muted); }
 .quick-sheet h2 { margin: 6px 0 16px; font-size: 22px; font-weight: 800; }
-.quick-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.quick-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .quick-chip { min-height: 56px; border-radius: 16px; background: var(--subtle); color: var(--text); font-size: 18px; font-weight: 700; }
 .quick-chip.on { background: var(--lime); color: var(--on-lime); }
 .quick-result { margin-top: 16px; padding: 16px; border-radius: 18px; background: var(--surface); }
@@ -452,3 +452,29 @@ footer { border-top: 0; }
 .quick-after .primary { flex: 1; }
 .quick-after .small-button { min-width: 96px; min-height: 56px; font-size: 15px; }
 .quick-actions .text-button { align-self: center; }
+
+/* v1.10 · 100KB 칩, 화질 선택, 제출 규격 프리셋 */
+.preset-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.preset-grid.four > button { min-height: 78px; padding: 11px 8px; }
+.preset-grid.four > button.selected { padding: 10px 7px; }
+.preset-grid.four strong { font-size: 21px; }
+.preset-grid.four small { font-size: 11px; margin-top: 5px; }
+.quality-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.quality-row > span { font-size: 12px; color: var(--muted); margin-right: auto; }
+.quality-row button { min-height: 40px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--text); font-size: 13px; }
+.quality-row button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.spec-presets { display: grid; gap: 8px; margin: 4px 0 6px; }
+.spec-presets button { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 52px; padding: 10px 14px; text-align: left; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); }
+.spec-presets button strong { font-size: 14px; }
+.spec-presets button small { font-size: 12px; color: var(--muted); text-align: right; }
+.spec-presets button.on { border: 2px solid var(--accent); padding: 9px 13px; background: var(--accent-soft); color: var(--accent); }
+.spec-presets button.on small { color: var(--accent); }
+.spec-source { margin: 6px 0 4px; padding: 10px 12px; border-radius: 10px; background: var(--subtle); color: var(--muted); font-size: 12px; line-height: 1.6; }
+.fit-choice { display: grid; gap: 4px; margin: 12px 0 0; }
+.fit-choice label { display: flex; align-items: center; gap: 9px; min-height: 40px; font-size: 13px; color: var(--text); cursor: pointer; }
+.fit-choice input { accent-color: var(--accent); width: 18px; height: 18px; margin: 0; }
+@media (max-width: 360px) { .preset-grid.four strong { font-size: 18px; } }
+.spec-tile { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; margin: -8px 0 18px; padding: 14px 16px; text-align: left; border-radius: 18px; border: 1px solid var(--line); background: var(--panel); color: var(--text); }
+.spec-tile strong { display: block; font-size: 15px; }
+.spec-tile small { display: block; margin-top: 3px; font-size: 12px; color: var(--muted); }
+.spec-tile b { font-size: 22px; color: var(--accent); font-weight: 500; }

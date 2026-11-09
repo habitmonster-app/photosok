@@ -3,7 +3,7 @@
 // 처리는 기존 엔진(사진 → 용량 줄이기)을 그대로 쓴다. 사용자가 누르기 전에는 아무것도 보내지 않는다.
 (() => {
   const KEY = 'photosok-quick-target';
-  const TARGETS = [[200000, '200KB'], [500000, '500KB'], [1000000, '1MB']];
+  const TARGETS = [[100000, '100KB'], [200000, '200KB'], [500000, '500KB'], [1000000, '1MB']];
   const $ = id => document.getElementById(id);
   let dialog, picked = 500000, running = false;
   try { const saved = Number(localStorage.getItem(KEY)); if (TARGETS.some(t => t[0] === saved)) picked = saved; } catch (_) {}

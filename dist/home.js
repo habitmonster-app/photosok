@@ -51,6 +51,11 @@
     document.querySelector('.workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }));
 
+  $('specTile')?.addEventListener('click', () => {
+    document.querySelector('.tool[data-tool="compress"]')?.click();
+    const d = $('specDetails'); if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }
+  });
+
   // ---- 큰 숫자 결과 카드 ----
   const fmt = bytes => bytes >= 1e6 ? (bytes / 1e6).toFixed(bytes >= 1e7 ? 0 : 1) + 'MB' : Math.max(1, Math.round(bytes / 1e3)) + 'KB';
   function setHero(label, valueHtml, ratio, caption) {
@@ -88,6 +93,12 @@
         s.mode === 'pdf' ? '아래에서 PDF 용량을 고르고 만들어 보세요.' : '아래에서 조건을 고르고 바로 줄여 보세요.');
       return;
     }
+    let saved = 0;
+    try { saved = Number(localStorage.getItem('photosok-saved-total')) || 0; } catch (_) {}
+    if (s.mode !== 'pdf' && saved >= 1000) {
+      setHero('지금까지 줄인 용량', `<b>${fmt(saved)}</b>`, null, '줄여서 저장한 사진들의 줄어든 용량 합계예요.');
+      return;
+    }
     setHero(s.mode === 'pdf' ? 'PDF로 모으기' : '사진 · PDF 용량 줄이기', '넣으면 <b>바로 가볍게</b>', null,
       '원하는 용량을 고르면 그 이하로 맞춰요. 원본은 그대로 남아요.');
   }
@@ -95,5 +106,6 @@
   let queued = false;
   const sync = () => { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; syncTiles(); syncHero(); }); };
   new MutationObserver(sync).observe(document.querySelector('main'), { subtree: true, childList: true, attributes: true, characterData: true });
+  document.addEventListener('photosok-saved', sync);
   sync();
 })();
