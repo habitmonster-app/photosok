@@ -203,7 +203,7 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
           r.cleanTile = clean ? getComputedStyle(clean).display : 'none';
           r.wasm = typeof WebAssembly;
           r.indexedDB = await new Promise(res => { try { const q = indexedDB.open('selftest'); q.onsuccess = () => res('ok'); q.onerror = () => res('error'); } catch (e) { res('throw ' + e); } });
-          r.worker = await new Promise(res => { try { const w = new Worker('heic-worker.js'); w.onerror = e => res('error ' + (e.message || '')); setTimeout(() => { w.terminate(); res('ok'); }, 1500); } catch (e) { res('throw ' + e); } });
+          r.worker = await new Promise(res => { try { const w = new Worker('heic-worker.js', { type: 'module' }); w.onerror = e => res('error ' + (e.message || '')); setTimeout(() => { w.terminate(); res('ok'); }, 1500); } catch (e) { res('throw ' + e); } });
           r.fetch = (await fetch('vendor/CHECKSUMS.json')).status;
           r.fonts = document.fonts ? document.fonts.status : '';
           const pdf = new Blob(['%PDF-1.4 selftest'], { type: 'application/pdf' });
@@ -218,6 +218,10 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
             case .failure(let error): print("SELFTEST_RESULT {\"error\":\"\(error.localizedDescription)\"}")
             }
             fflush(stdout)
+            // 화면 사진용: 3초 뒤 첫 소개를 건너뛰어 처음 화면을 보인다.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                self.runJS("document.getElementById('obSkip') && document.getElementById('obSkip').click()")
+            }
         }
     }
 }
