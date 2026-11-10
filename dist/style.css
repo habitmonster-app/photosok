@@ -781,3 +781,29 @@ body[data-screen="work"] .ad-free { display: none; }
 .deco-curve { display: block; width: 100%; height: auto; aspect-ratio: 520 / 300; border-radius: 12px; background: var(--subtle); touch-action: none; cursor: ns-resize; }
 .deco-label small { margin-left: 6px; font-weight: 500; font-size: 11px; color: var(--muted); }
 .deco-note { margin: 4px 0 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
+/* v1.27 스티커 모음·스티커 만들기 */
+.deco-packs { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 8px; -webkit-overflow-scrolling: touch; }
+.deco-packs button { flex: 0 0 auto; min-height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; }
+.deco-packs button.on { border-color: var(--lime); color: var(--text); background: color-mix(in srgb, var(--lime) 16%, transparent); }
+.deco-emojis.labels { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+.deco-emojis .label-chip { font-family: inherit; font-size: 13px; font-weight: 800; color: var(--text); }
+.deco-emojis .label-chip.fx-tape { background: repeating-linear-gradient(90deg, #ff9cc6aa 0 10px, #ffb8d6aa 10px 14px); color: #222; }
+.deco-emojis .label-chip.fx-tag { background: #ffd84d; color: #111; }
+.deco-emojis .label-chip.fx-badge { border: 2px solid #ff4d4f; color: #ff4d4f; background: none; }
+.deco-emojis .label-chip.fx-neon { color: #fff; text-shadow: 0 0 6px #ff8fb8, 0 0 12px #ff8fb8; }
+.deco-emojis .label-chip.fx-glow { color: #fff7c2; text-shadow: 0 0 10px #ffd43b; }
+.deco-emojis .label-chip.fx-marker { background: linear-gradient(transparent 45%, #ffd43b99 45%); }
+.deco-emojis.mine { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
+.deco-emojis.mine button { height: 64px; background: repeating-conic-gradient(#0000 0 25%, #8882 0 50%) 0 0 / 12px 12px; }
+.deco-emojis.mine img { max-width: 56px; max-height: 56px; object-fit: contain; }
+.deco-emojis.mine .make { font-family: inherit; font-size: 13px; font-weight: 700; color: var(--text); background: var(--subtle); }
+#stickerDialog { max-width: 560px; }
+.sm-stage { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: center; margin-top: 12px; padding: 12px; border-radius: 14px; background: var(--subtle); }
+.sm-stage canvas { display: block; width: 100%; height: auto; max-height: 40dvh; object-fit: contain; border-radius: 6px; touch-action: none; }
+#smOut { background: repeating-conic-gradient(#0000 0 25%, #8883 0 50%) 0 0 / 16px 16px; border-radius: 10px; }
+.sm-busy { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; border-radius: 14px; background: rgba(0,0,0,.45); color: #fff; font-weight: 700; }
+.sm-busy[hidden] { display: none; }
+.sm-tones { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; }
+.sm-tones button { flex: 0 0 72px; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 4px; border: 2px solid transparent; border-radius: 12px; background: none; color: var(--muted); font-size: 11px; }
+.sm-tones button.on { border-color: var(--lime); color: var(--text); }
+.sm-tones img { width: 60px; height: 60px; object-fit: cover; border-radius: 9px; }
