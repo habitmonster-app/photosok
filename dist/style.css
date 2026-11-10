@@ -776,3 +776,8 @@ body[data-screen="work"] .ad-free { display: none; }
 /* 스티커를 고르는 동안에도 미리보기가 보이게 위에 붙여 둔다 */
 #decoDialog .text-stage { position: sticky; top: -1px; z-index: 3; box-shadow: 0 6px 12px -8px rgba(0,0,0,.35); }
 #decoDialog .text-stage canvas { max-height: 38vh; width: auto; max-width: 100%; touch-action: none; }
+/* v1.26 꾸미기 효과·커브 */
+.deco-tabs { grid-template-columns: repeat(4, 1fr); }
+.deco-curve { display: block; width: 100%; height: auto; aspect-ratio: 520 / 300; border-radius: 12px; background: var(--subtle); touch-action: none; cursor: ns-resize; }
+.deco-label small { margin-left: 6px; font-weight: 500; font-size: 11px; color: var(--muted); }
+.deco-note { margin: 4px 0 0; font-size: 12px; color: var(--muted); line-height: 1.5; }

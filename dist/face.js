@@ -58,14 +58,13 @@
     return { faces, width: canvas.width, height: canvas.height };
   }
 
-  // 사람만 남기고 배경을 색으로 채운 캔버스를 돌려준다 (가장자리는 부드럽게 섞음).
-  async function whiteBackground(canvas, color = '#ffffff') {
+  // 사람 자리만 불투명한 마스크 캔버스(사진 크기, 가장자리 부드럽게). soft: 가장자리 흐림 정도(긴 변 대비 비율의 역수)
+  async function personMask(canvas, soft = 500) {
     const seg = await segmenter();
     const res = seg.segment(canvas);
     try {
       const mask = res.confidenceMasks[0];
       const mw = mask.width, mh = mask.height, m = mask.getAsFloat32Array();
-      // 마스크를 사진 크기로 늘리면서 부드럽게
       const mc = document.createElement('canvas'); mc.width = mw; mc.height = mh;
       const mx = mc.getContext('2d'); const md = mx.createImageData(mw, mh);
       for (let i = 0; i < m.length; i++) { const a = Math.min(1, Math.max(0, (m[i] - 0.35) / 0.4)); md.data[i * 4 + 3] = a * 255; }
@@ -73,15 +72,28 @@
       const W = canvas.width, H = canvas.height;
       const big = document.createElement('canvas'); big.width = W; big.height = H;
       const bx = big.getContext('2d'); bx.imageSmoothingQuality = 'high';
-      bx.filter = `blur(${Math.max(1, Math.round(Math.max(W, H) / 500))}px)`;
+      bx.filter = `blur(${Math.max(1, Math.round(Math.max(W, H) / soft))}px)`;
       bx.drawImage(mc, 0, 0, W, H); bx.filter = 'none';
-      bx.globalCompositeOperation = 'source-in'; bx.drawImage(canvas, 0, 0);
-      const out = document.createElement('canvas'); out.width = W; out.height = H;
-      const ox = out.getContext('2d'); ox.fillStyle = color; ox.fillRect(0, 0, W, H); ox.drawImage(big, 0, 0);
-      big.width = big.height = mc.width = mc.height = 1;
-      return out;
+      mc.width = mc.height = 1;
+      return big;
     } finally { res.close?.(); }
   }
+  // 사람만 남기고 배경은 투명한 캔버스
+  async function cutout(canvas, soft = 500) {
+    const big = await personMask(canvas, soft);
+    const bx = big.getContext('2d');
+    bx.globalCompositeOperation = 'source-in'; bx.drawImage(canvas, 0, 0); bx.globalCompositeOperation = 'source-over';
+    return big;
+  }
+  // 사람만 남기고 배경을 색으로 채운 캔버스를 돌려준다 (가장자리는 부드럽게 섞음).
+  async function whiteBackground(canvas, color = '#ffffff') {
+    const big = await cutout(canvas);
+    const W = canvas.width, H = canvas.height;
+    const out = document.createElement('canvas'); out.width = W; out.height = H;
+    const ox = out.getContext('2d'); ox.fillStyle = color; ox.fillRect(0, 0, W, H); ox.drawImage(big, 0, 0);
+    big.width = big.height = 1;
+    return out;
+  }
 
-  window.PhotoSokFace = Object.freeze({ detect, whiteBackground, orientedCanvas, preload: () => landmarker().catch(() => {}) });
+  window.PhotoSokFace = Object.freeze({ detect, whiteBackground, personMask, cutout, orientedCanvas, preload: () => landmarker().catch(() => {}) });
 })();

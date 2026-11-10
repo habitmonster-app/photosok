@@ -50,12 +50,20 @@
     { id: 'sepia', name: '세피아', group: '흑백', p: { sepia: 1, con: .05, fade: .15, vig: .2 } },
     { id: 'bwcool', name: '푸른 흑백', group: '흑백', p: { bw: 1, con: .15, sh: [0, .01, .04], hi: [0, .005, .02] } },
     { id: 'bwfilm', name: '흑백 필름', group: '흑백', p: { bw: 1, con: .2, fade: .2, grain: .7, vig: .25 } },
+    // 효과: clarity 명료도(주변과의 밝기 차 키우기) bloom 글로우(밝은 곳 빛 번짐) leak 빛샘 grit 거친 얼룩
+    { id: 'hdr', name: 'HDR', group: '효과', p: { clarity: .9, sat: .14, con: -.06, exp: .03 } },
+    { id: 'glow', name: '화사한 글로우', group: '효과', p: { bloom: .75, exp: .08, con: -.08, warm: .1, sat: .05 } },
+    { id: 'drama', name: '드라마', group: '효과', p: { clarity: 1.1, sat: -.3, con: .18, vig: .45, exp: -.05 } },
+    { id: 'grunge', name: '그런지', group: '효과', p: { clarity: .7, sat: -.35, grit: .9, grain: .6, vig: .35, warm: .15, fade: .1 } },
+    { id: 'noir', name: '느와르', group: '효과', p: { bw: 1, con: .5, clarity: .5, vig: .55, exp: -.08 } },
+    { id: 'retrolux', name: '레트로룩스', group: '효과', p: { leak: .85, fade: .25, grain: .5, warm: .25, sat: -.05, con: .05, vig: .2 } },
   ];
   // 직접 조절 막대 (-100~100). 필터 위에 더해진다.
   const ADJ = [
     { k: 'exp', name: '밝기', scale: .6 }, { k: 'con', name: '대비', scale: .5 }, { k: 'sat', name: '채도', scale: .6 },
     { k: 'warm', name: '색온도', scale: 1 }, { k: 'tint', name: '색조', scale: .8 }, { k: 'fade', name: '페이드', scale: .7, min: 0 },
     { k: 'sharp', name: '선명도', scale: 1, min: 0 }, { k: 'vig', name: '비네트', scale: .7 }, { k: 'grain', name: '입자', scale: 1, min: 0 },
+    { k: 'clarity', name: '명료도', scale: 1 }, { k: 'bloom', name: '글로우', scale: .8, min: 0 },
   ];
   const MY_KEY = 'photosok-my-filters';
   function myFilters() { try { const a = JSON.parse(localStorage.getItem(MY_KEY) || '[]'); return Array.isArray(a) ? a.slice(0, 30) : []; } catch { return []; } }
@@ -126,19 +134,74 @@
   }
   let dialog, canvas, session = null, pending = false;
 
-  function params(id, strength, adj = {}) {
+  function params(id, strength, adj = {}, curve = null) {
     const f = findFilter(id);
     const s = strength / 100, p = f.p, a = k => { const d = ADJ.find(x => x.k === k); return d ? (Number(adj[k]) || 0) / 100 * d.scale : 0; };
     const v = k => (p[k] || 0) * s + a(k);
     const tint = t => (t || [0, 0, 0]).map(n => n * s);
     return { exp: v('exp'), con: v('con'), sat: v('sat'), warm: v('warm'), tint: v('tint'), fade: Math.max(0, v('fade')), vig: v('vig'), grain: Math.max(0, v('grain')),
-      sharp: Math.max(0, v('sharp')), bw: Math.min(1, (p.bw || 0) * s), sepia: Math.min(1, (p.sepia || 0) * s), sh: tint(p.sh), hi: tint(p.hi) };
+      sharp: Math.max(0, v('sharp')), clarity: v('clarity'), bloom: Math.max(0, v('bloom')), leak: Math.max(0, v('leak')), grit: Math.max(0, v('grit')), curve: curveLut(curve), bw: Math.min(1, (p.bw || 0) * s), sepia: Math.min(1, (p.sepia || 0) * s), sh: tint(p.sh), hi: tint(p.hi) };
+  }
+
+  function boxBlur(src, w, h, r, tmp, out) {
+    const dd = 2 * r + 1;
+    for (let y = 0; y < h; y++) {
+      const o = y * w; let s = 0;
+      for (let k = -r; k <= r; k++) s += src[o + Math.min(w - 1, Math.max(0, k))];
+      for (let x = 0; x < w; x++) { tmp[o + x] = s / dd; s += src[o + Math.min(w - 1, x + r + 1)] - src[o + Math.max(0, x - r)]; }
+    }
+    for (let x = 0; x < w; x++) {
+      let s = 0;
+      for (let k = -r; k <= r; k++) s += tmp[Math.min(h - 1, Math.max(0, k)) * w + x];
+      for (let y = 0; y < h; y++) { out[y * w + x] = s / dd; s += tmp[Math.min(h - 1, y + r + 1) * w + x] - tmp[Math.max(0, y - r) * w + x]; }
+    }
+    return out;
+  }
+  // 커브: 0, ¼, ½, ¾, 1 다섯 점의 높이로 매끄러운(단조) 곡선을 만들어 0~255 표로 바꾼다.
+  const CURVE_X = [0, .25, .5, .75, 1];
+  function isFlat(c) { return !Array.isArray(c) || c.length !== 5 || c.every((v, i) => Math.abs(v - CURVE_X[i]) < .004); }
+  function curveFn(c) {
+    const n = 5, dx = .25, m = [], t = [];
+    for (let i = 0; i < n - 1; i++) m.push((c[i + 1] - c[i]) / dx);
+    t[0] = m[0]; t[n - 1] = m[n - 2];
+    for (let i = 1; i < n - 1; i++) t[i] = m[i - 1] * m[i] <= 0 ? 0 : (m[i - 1] + m[i]) / 2;
+    for (let i = 0; i < n - 1; i++) { if (!m[i]) { t[i] = t[i + 1] = 0; continue; } const a = t[i] / m[i], b = t[i + 1] / m[i], s = a * a + b * b; if (s > 9) { const k = 3 / Math.sqrt(s); t[i] = k * a * m[i]; t[i + 1] = k * b * m[i]; } }
+    return x => {
+      const i = Math.min(n - 2, Math.max(0, Math.floor(x / dx))), u = (x - CURVE_X[i]) / dx, u2 = u * u, u3 = u2 * u;
+      return (2 * u3 - 3 * u2 + 1) * c[i] + (u3 - 2 * u2 + u) * dx * t[i] + (-2 * u3 + 3 * u2) * c[i + 1] + (u3 - u2) * dx * t[i + 1];
+    };
+  }
+  function curveLut(c) {
+    if (isFlat(c)) return null;
+    const f = curveFn(c), lut = new Float32Array(256);
+    for (let i = 0; i < 256; i++) lut[i] = Math.min(1, Math.max(0, f(i / 255)));
+    return lut;
   }
 
   // 픽셀 단위 색 보정 (미리보기와 저장 결과가 같은 식을 쓴다)
   function grade(ctx, w, h, q) {
-    if (!['exp', 'con', 'sat', 'warm', 'tint', 'fade', 'vig', 'grain', 'bw', 'sepia', 'sharp'].some(k => q[k]) && !q.sh.some(Boolean) && !q.hi.some(Boolean)) return;
+    if (!['exp', 'con', 'sat', 'warm', 'tint', 'fade', 'vig', 'grain', 'bw', 'sepia', 'sharp', 'clarity', 'bloom', 'leak', 'grit', 'curve'].some(k => q[k]) && !q.sh.some(Boolean) && !q.hi.some(Boolean)) return;
     const img = ctx.getImageData(0, 0, w, h), d = img.data;
+    // 명료도·글로우용 흐린 밝기 지도 (원래 사진 기준)
+    let L0 = null, Lb = null, Bb = null;
+    if (q.clarity || q.bloom) {
+      const n = w * h, T = new Float32Array(n); L0 = new Float32Array(n);
+      for (let i = 0, j = 0; i < n; i++, j += 4) L0[i] = (.299 * d[j] + .587 * d[j + 1] + .114 * d[j + 2]) / 255;
+      if (q.clarity) { Lb = new Float32Array(n); boxBlur(L0, w, h, Math.max(2, Math.round(Math.max(w, h) / 80)), T, Lb); }
+      if (q.bloom) {
+        const B = new Float32Array(n); for (let i = 0; i < n; i++) B[i] = Math.max(0, L0[i] - .5) / .5;
+        const r = Math.max(2, Math.round(Math.max(w, h) / 30)), B2 = new Float32Array(n);
+        boxBlur(B, w, h, r, T, B2); boxBlur(B2, w, h, r, T, B); Bb = B;
+      }
+    }
+    // 그런지 얼룩: 굵은 격자 잡음을 부드럽게 이어 붙인다
+    let grit = null, gcell = 1, gw = 0;
+    if (q.grit) {
+      gcell = Math.max(8, Math.round(Math.max(w, h) / 22)); gw = Math.ceil(w / gcell) + 2;
+      const gh = Math.ceil(h / gcell) + 2; grit = new Float32Array(gw * gh); let sd = 987;
+      for (let i = 0; i < grit.length; i++) { sd = (Math.imul(sd, 1664525) + 1013904223) | 0; grit[i] = (sd >>> 8) / 16777216; }
+    }
+    const diag = Math.hypot(w, h);
     if (q.sharp) {
       // 선명도: 주변 4칸 평균과의 차이를 더한다 (언샤프)
       const src = new Uint8ClampedArray(d), amt = q.sharp * 1.2, row = w * 4;
@@ -155,6 +218,8 @@
         let r = d[i] / 255 * gain, g = d[i + 1] / 255 * gain, b = d[i + 2] / 255 * gain;
         r += q.warm * .08; b -= q.warm * .08; g += q.tint * .05; r -= q.tint * .015; b -= q.tint * .015;
         r = (r - .5) * (1 + q.con) + .5; g = (g - .5) * (1 + q.con) + .5; b = (b - .5) * (1 + q.con) + .5;
+        const pi = i >> 2;
+        if (Lb) { const det = Math.max(-.12, Math.min(.12, (L0[pi] - Lb[pi]) * q.clarity * 1.8)), wt = Math.max(.25, 1 - Math.abs(L0[pi] - .5) * 1.3); r += det * wt; g += det * wt; b += det * wt; }
         let L = .299 * r + .587 * g + .114 * b;
         const sat = 1 + q.sat - q.bw - q.sepia;
         r = L + (r - L) * sat; g = L + (g - L) * sat; b = L + (b - L) * sat;
@@ -163,7 +228,18 @@
         r += q.sh[0] * ws + q.hi[0] * wh; g += q.sh[1] * ws + q.hi[1] * wh; b += q.sh[2] * ws + q.hi[2] * wh;
         if (lift) { r = r * (1 - lift) + lift; g = g * (1 - lift) + lift; b = b * (1 - lift) + lift; }
         if (q.vig) { const k = 1 - q.vig * .55 * Math.pow(((x - cx) * (x - cx) + dy) / rr, 1.3); r *= k; g *= k; b *= k; }
+        if (Bb) { const k = Bb[pi] * q.bloom * .85; r += k * (1.05 - r * .5); g += k * (1 - g * .5); b += k * (.92 - b * .5); }
+        if (q.leak) {
+          const f1 = Math.max(0, 1 - Math.hypot(x, y) / (diag * .7)) ** 2, f2 = Math.max(0, 1 - Math.hypot(w - x, h - y) / (diag * .55)) ** 2;
+          r += q.leak * (.5 * f1 + .32 * f2); g += q.leak * (.2 * f1 + .04 * f2); b += q.leak * (.02 * f1 + .24 * f2);
+        }
+        if (grit) {
+          const gx = x / gcell, gy = y / gcell, x0 = gx | 0, y0 = gy | 0, fx = gx - x0, fy = gy - y0, o = y0 * gw + x0;
+          const v = (grit[o] * (1 - fx) + grit[o + 1] * fx) * (1 - fy) + (grit[o + gw] * (1 - fx) + grit[o + gw + 1] * fx) * fy;
+          const k = 1 - Math.max(0, v - .45) * q.grit * .7; r *= k; g *= k; b *= k * .97;
+        }
         if (q.grain) { seed = (Math.imul(seed, 1664525) + 1013904223) | 0; const n = ((seed >>> 24) / 255 - .5) * q.grain * .09; r += n; g += n; b += n; }
+        if (q.curve) { const C = q.curve; r = C[Math.min(255, Math.max(0, Math.round(r * 255)))]; g = C[Math.min(255, Math.max(0, Math.round(g * 255)))]; b = C[Math.min(255, Math.max(0, Math.round(b * 255)))]; }
         d[i] = r * 255; d[i + 1] = g * 255; d[i + 2] = b * 255;
       }
     }
@@ -185,6 +261,42 @@
     return null;
   }
   function stampDate() { const d = session?.date || new Date(); return "'" + String(d.getFullYear()).slice(2) + ' ' + String(d.getMonth() + 1).padStart(2, '0') + ' ' + String(d.getDate()).padStart(2, '0'); }
+  // 배경 흐림(인물 사진)과 이중 노출을 원본 그림에 먼저 적용한다. cache.mask 에 사람 마스크를 보관해 다시 쓴다.
+  async function prepare(src, spec, second, cache = {}) {
+    const bokeh = Number(spec.bokeh) || 0, dbl = second && spec.dbl;
+    if (!bokeh && !dbl) return src;
+    const needMask = bokeh || dbl.mode === 'inside';
+    let mask = null;
+    if (needMask) {
+      if (!cache.mask || cache.maskFor !== src) { cache.mask = await PhotoSokFace.personMask(src, 300); cache.maskFor = src; }
+      mask = cache.mask;
+    }
+    const w = src.width, h = src.height, out = document.createElement('canvas'); out.width = w; out.height = h;
+    const x = out.getContext('2d');
+    if (bokeh) {
+      const r = Math.max(1, Math.round(Math.max(w, h) * bokeh / 100 * .03)), pad = r * 2;
+      // 사람을 지운 배경만 흐리게 한다. 사람 자리는 더 넓게 흐린 배경으로 메워 가장자리에 사람 색이 번지지 않게.
+      const bg = document.createElement('canvas'); bg.width = w; bg.height = h;
+      const bx = bg.getContext('2d'); bx.drawImage(src, 0, 0); bx.globalCompositeOperation = 'destination-out'; bx.drawImage(mask, 0, 0); bx.drawImage(mask, 0, 0);
+      x.filter = `blur(${r * 2}px)`; x.drawImage(src, -pad * 2, -pad * 2, w + pad * 4, h + pad * 4);
+      for (const k of [6, 3, 1]) { x.filter = `blur(${r * k}px)`; x.drawImage(bg, -pad, -pad, w + pad * 2, h + pad * 2); }
+      x.filter = 'none'; bg.width = bg.height = 1;
+      const person = document.createElement('canvas'); person.width = w; person.height = h;
+      const px = person.getContext('2d'); px.drawImage(mask, 0, 0); px.globalCompositeOperation = 'source-in'; px.drawImage(src, 0, 0);
+      x.drawImage(person, 0, 0); person.width = person.height = 1;
+    } else x.drawImage(src, 0, 0);
+    if (dbl) {
+      const l = PhotoEngine.coverLayout(second.width, second.height, w, h, null);
+      const layer = document.createElement('canvas'); layer.width = w; layer.height = h;
+      const lx = layer.getContext('2d');
+      lx.drawImage(second, w / 2 + l.dx - second.width * l.scale / 2, h / 2 + l.dy - second.height * l.scale / 2, second.width * l.scale, second.height * l.scale);
+      if (dbl.mode === 'inside') { lx.globalCompositeOperation = 'destination-in'; lx.drawImage(mask, 0, 0); }
+      x.save(); x.globalAlpha = Math.min(1, Math.max(.1, (dbl.amount ?? 60) / 100));
+      x.globalCompositeOperation = dbl.mode === 'inside' ? 'screen' : dbl.mode; x.drawImage(layer, 0, 0); x.restore();
+      layer.width = layer.height = 1;
+    }
+    return out;
+  }
   function compose(out, src, spec) {
     const id = spec.frame || 'none', w = out.width, h = out.height;
     const ins = frameInset(id, w, h);
@@ -241,7 +353,7 @@
       const s = Math.min(w / src.width, h / src.height);
       ctx.drawImage(src, (w - src.width * s) / 2, (h - src.height * s) / 2, src.width * s, src.height * s);
     }
-    grade(ctx, w, h, params(spec.filter, spec.strength, spec.adj || {}));
+    grade(ctx, w, h, params(spec.filter, spec.strength, spec.adj || {}, spec.curve));
   }
   function frameSize(spec, src, maxEdge) {
     const r = RATIOS.find(x => x.id === spec.ratio);
@@ -271,14 +383,29 @@
       <div class="dialog-head"><h2>꾸미기</h2><button type="button" class="icon-button" id="decoClose" aria-label="꾸미기 닫기"><svg><use href="#i-close"/></svg></button></div>
       <div class="text-stage"><canvas id="decoCanvas" aria-label="꾸미기 미리보기"></canvas></div>
       <p class="text-hint" id="decoHint"></p>
-      <div class="deco-tabs" role="tablist"><button type="button" role="tab" data-dtab="filter" class="on">필터</button><button type="button" role="tab" data-dtab="adjust">직접 조절</button><button type="button" role="tab" data-dtab="sticker">스티커·글씨</button></div>
+      <div class="deco-tabs" role="tablist"><button type="button" role="tab" data-dtab="filter" class="on">필터</button><button type="button" role="tab" data-dtab="adjust">조절</button><button type="button" role="tab" data-dtab="effect">효과</button><button type="button" role="tab" data-dtab="sticker">스티커</button></div>
       <div id="decoFilterPane">
         <div class="deco-filters" id="decoFilters" role="group" aria-label="필터"></div>
         <label class="crop-zoom"><span>강도</span><input type="range" id="decoStrength" min="0" max="150" step="5" aria-label="필터 강도"><b id="decoStrengthValue"></b></label>
       </div>
       <div id="decoAdjustPane" hidden>
         ${ADJ.map(a => `<label class="crop-zoom adj"><span>${a.name}</span><input type="range" data-adj="${a.k}" min="${a.min ?? -100}" max="100" step="1" aria-label="${a.name}"><b data-adjv="${a.k}">0</b></label>`).join('')}
+        <p class="deco-label">커브 <small>점을 위아래로 끌어 밝기를 바꿔요</small></p>
+        <canvas class="deco-curve" id="decoCurve" width="520" height="300" aria-label="커브"></canvas>
+        <div class="deco-adj-actions"><button type="button" class="small-button" id="decoAutoWb">화이트 밸런스 자동</button><button type="button" class="small-button" id="decoCurveS">대비 곡선(S)</button><button type="button" class="small-button" id="decoCurveReset">커브 초기화</button></div>
         <div class="deco-adj-actions"><button type="button" class="small-button" id="decoAdjReset">조절 초기화</button><button type="button" class="small-button" id="decoSaveMy">내 필터로 저장</button><button type="button" class="small-button" id="decoDeleteMy" hidden>이 내 필터 지우기</button></div>
+      </div>
+      <div id="decoEffectPane" hidden>
+        <p class="deco-label">인물 배경 흐리게</p>
+        <label class="crop-zoom"><span>흐림</span><input type="range" id="decoBokeh" min="0" max="100" step="5" aria-label="배경 흐림"><b id="decoBokehValue"></b></label>
+        <p class="deco-note" id="decoBokehNote">사람을 찾아 뒤 배경만 흐리게 해요. 사람이 없는 사진은 바뀌지 않아요.</p>
+        <p class="deco-label">이중 노출</p>
+        <div class="deco-adj-actions"><button type="button" class="small-button" id="decoDblPick">겹칠 사진 고르기</button><button type="button" class="small-button" id="decoDblClear" hidden>겹친 사진 빼기</button></div>
+        <input type="file" id="decoDblFile" accept="image/*" hidden>
+        <div id="decoDblRow" hidden>
+          <div class="text-row wrap" id="decoDblModes" role="group" aria-label="섞는 방식"><button type="button" data-dbl="screen">밝게 겹치기</button><button type="button" data-dbl="multiply">어둡게 겹치기</button><button type="button" data-dbl="overlay">진하게 겹치기</button><button type="button" data-dbl="inside">사람 안에만</button></div>
+          <label class="crop-zoom"><span>진하기</span><input type="range" id="decoDblAmount" min="10" max="100" step="5" aria-label="겹친 사진 진하기"><b id="decoDblValue"></b></label>
+        </div>
       </div>
       <div id="decoStickerPane" hidden>
         <p class="deco-label">이모티콘</p>
@@ -304,10 +431,11 @@
     document.body.append(dialog);
     canvas = $('decoCanvas');
     $('decoClose').onclick = () => dialog.close();
-    dialog.addEventListener('close', () => { session = null; });
+    dialog.addEventListener('close', () => { if (session?.view && session.view !== session.preview) session.view.width = session.view.height = 1; session = null; });
     dialog.querySelectorAll('[data-dtab]').forEach(b => b.onclick = () => {
       const t = b.dataset.dtab; tab = t;
-      $('decoFilterPane').hidden = t !== 'filter'; $('decoAdjustPane').hidden = t !== 'adjust'; $('decoStickerPane').hidden = t !== 'sticker';
+      $('decoFilterPane').hidden = t !== 'filter'; $('decoAdjustPane').hidden = t !== 'adjust'; $('decoEffectPane').hidden = t !== 'effect'; $('decoStickerPane').hidden = t !== 'sticker';
+      if (t === 'adjust') drawCurve();
       dialog.querySelectorAll('[data-dtab]').forEach(x => x.classList.toggle('on', x === b));
       if (t !== 'sticker') session.sel = -1;
       sync(); schedule();
@@ -339,10 +467,51 @@
     $('decoStDel').onclick = () => { if (session.sel >= 0) { stickers().splice(session.sel, 1); session.sel = -1; sync(); schedule(); } };
     $('decoStClear').onclick = () => { session.spec.stickers = []; session.sel = -1; sync(); schedule(); };
     dialog.querySelectorAll('[data-adj]').forEach(r => r.oninput = () => { session.spec.adj[r.dataset.adj] = Number(r.value); sync(); schedule(); });
-    $('decoAdjReset').onclick = () => { session.spec.adj = {}; sync(); schedule(); };
+    $('decoAdjReset').onclick = () => { session.spec.adj = {}; session.spec.curve = null; sync(); drawCurve(); schedule(); };
+    $('decoCurveReset').onclick = () => { session.spec.curve = null; drawCurve(); schedule(); };
+    $('decoCurveS').onclick = () => { session.spec.curve = [0, .2, .5, .8, 1]; drawCurve(); schedule(); };
+    $('decoAutoWb').onclick = () => {
+      // 회색 세계 가정: 아주 밝거나 어두운 곳을 뺀 평균색이 회색이 되도록 색온도·색조를 맞춘다.
+      const c = session.preview, d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+      let R = 0, G = 0, B = 0, n = 0;
+      for (let i = 0; i < d.length; i += 16) { const l = (d[i] + d[i + 1] + d[i + 2]) / 3; if (l < 25 || l > 235) continue; R += d[i]; G += d[i + 1]; B += d[i + 2]; n++; }
+      if (!n) { toast('색을 맞출 부분을 찾지 못했어요.', true); return; }
+      R /= n; G /= n; B /= n;
+      const warm = Math.max(-100, Math.min(100, Math.round((B - R) / 255 / .16 * 100)));
+      const tint = Math.max(-100, Math.min(100, Math.round(((R + B) / 2 - G) / 255 / .065 * 100 / .8)));
+      session.spec.adj.warm = warm; session.spec.adj.tint = tint; sync(); schedule();
+      toast('사진의 색을 자동으로 맞췄어요. 색온도·색조 막대로 더 고칠 수 있어요.');
+    };
+    // 커브 편집: 가운데 세 점(¼·½·¾)과 양 끝 점을 위아래로 끈다
+    const cv = $('decoCurve'); let cdrag = -1;
+    const cpos = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width, y: 1 - (e.clientY - r.top) / r.height }; };
+    cv.addEventListener('pointerdown', e => {
+      const p = cpos(e), c = session.spec.curve || CURVE_X.slice();
+      let best = 0; CURVE_X.forEach((x, i) => { if (Math.abs(x - p.x) < Math.abs(CURVE_X[best] - p.x)) best = i; });
+      cdrag = best; session.spec.curve = c; cv.setPointerCapture(e.pointerId);
+      c[best] = Math.min(1, Math.max(0, p.y)); drawCurve(); schedule();
+    });
+    cv.addEventListener('pointermove', e => { if (cdrag < 0) return; session.spec.curve[cdrag] = Math.min(1, Math.max(0, cpos(e).y)); drawCurve(); schedule(); });
+    const cend = () => { if (cdrag >= 0 && isFlat(session.spec.curve)) session.spec.curve = null; cdrag = -1; };
+    cv.addEventListener('pointerup', cend); cv.addEventListener('pointercancel', cend);
+    // 효과: 배경 흐림, 이중 노출
+    $('decoBokeh').oninput = () => { session.spec.bokeh = Number($('decoBokeh').value); $('decoBokehValue').textContent = session.spec.bokeh ? session.spec.bokeh + '%' : '끔'; prepareView(); };
+    $('decoDblPick').onclick = () => $('decoDblFile').click();
+    $('decoDblFile').onchange = async () => {
+      const f = $('decoDblFile').files[0]; $('decoDblFile').value = ''; if (!f) return;
+      try {
+        const kept = await keepFile(f);
+        session.second = kept; session.secondPreview = await oriented(kept, 0, 900);
+        if (!session.spec.dbl) session.spec.dbl = { mode: 'screen', amount: 60 };
+        sync(); prepareView();
+      } catch (e) { toast(errText(e, '겹칠 사진을 열지 못했어요.'), true); }
+    };
+    $('decoDblClear').onclick = () => { session.second = null; session.secondPreview = null; session.spec.dbl = null; sync(); prepareView(); };
+    dialog.querySelectorAll('[data-dbl]').forEach(b => b.onclick = () => { session.spec.dbl.mode = b.dataset.dbl; sync(); prepareView(); });
+    $('decoDblAmount').oninput = () => { session.spec.dbl.amount = Number($('decoDblAmount').value); $('decoDblValue').textContent = session.spec.dbl.amount + '%'; prepareView(); };
     $('decoSaveMy').onclick = () => {
       const list = myFilters(); const q = params(session.spec.filter, session.spec.strength, session.spec.adj);
-      const p = {}; for (const k of ['exp', 'con', 'sat', 'warm', 'tint', 'fade', 'vig', 'grain', 'sharp', 'bw', 'sepia']) if (q[k]) p[k] = +q[k].toFixed(4);
+      const p = {}; for (const k of ['exp', 'con', 'sat', 'warm', 'tint', 'fade', 'vig', 'grain', 'sharp', 'bw', 'sepia', 'clarity', 'bloom', 'leak', 'grit']) if (q[k]) p[k] = +q[k].toFixed(4);
       if (q.sh.some(Boolean)) p.sh = q.sh.map(n => +n.toFixed(4)); if (q.hi.some(Boolean)) p.hi = q.hi.map(n => +n.toFixed(4));
       let n = 1; while (list.some(x => x.name === '내 필터 ' + n)) n++;
       const item = { id: Date.now().toString(36), name: '내 필터 ' + n, p };
@@ -396,7 +565,39 @@
   function schedule() { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; draw(); }); }
   function resize() { const f = frameSize(session.spec, session.preview, 640); canvas.width = f.w; canvas.height = f.h; }
   let tab = 'filter';
-  function draw() { if (session) compose(canvas, session.preview, { ...session.spec, _sel: tab === 'sticker' ? session.sel : -1 }); }
+  function draw() { if (session) compose(canvas, session.view || session.preview, { ...session.spec, _sel: tab === 'sticker' ? session.sel : -1 }); }
+  function drawCurve() {
+    if (!session) return;
+    const cv = $('decoCurve'), x = cv.getContext('2d'), W = cv.width, H = cv.height, c = session.spec.curve || CURVE_X;
+    const dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
+    x.clearRect(0, 0, W, H);
+    x.strokeStyle = dark ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.1)'; x.lineWidth = 2;
+    for (let i = 1; i < 4; i++) { x.beginPath(); x.moveTo(W * i / 4, 0); x.lineTo(W * i / 4, H); x.moveTo(0, H * i / 4); x.lineTo(W, H * i / 4); x.stroke(); }
+    x.setLineDash([8, 8]); x.beginPath(); x.moveTo(0, H); x.lineTo(W, 0); x.stroke(); x.setLineDash([]);
+    const f = curveFn(c); x.strokeStyle = '#c8f04a'; x.lineWidth = 5; x.beginPath();
+    for (let i = 0; i <= 100; i++) { const t = i / 100, y = Math.min(1, Math.max(0, f(t))); i ? x.lineTo(t * W, H - y * H) : x.moveTo(t * W, H - y * H); }
+    x.stroke();
+    c.forEach((v, i) => { x.beginPath(); x.arc(CURVE_X[i] * W, H - v * H, 13, 0, 7); x.fillStyle = '#c8f04a'; x.fill(); x.lineWidth = 4; x.strokeStyle = dark ? '#101213' : '#ffffff'; x.stroke(); });
+  }
+  // 배경 흐림·이중 노출은 사람 찾기가 필요해서 미리 만들어 둔 그림(session.view) 위에서 미리보기를 그린다.
+  let prepTimer = 0, prepSeq = 0;
+  function prepareView() {
+    clearTimeout(prepTimer);
+    prepTimer = setTimeout(async () => {
+      if (!session) return;
+      const seq = ++prepSeq, s = session;
+      try {
+        const v = await prepare(s.preview, s.spec, s.secondPreview, s);
+        if (seq !== prepSeq || s !== session) return;
+        if (session.view && session.view !== session.preview) session.view.width = session.view.height = 1;
+        session.view = v; schedule();
+      } catch (e) {
+        if (s !== session) return;
+        s.spec.bokeh = 0; if (s.spec.dbl?.mode === 'inside') s.spec.dbl.mode = 'screen';
+        sync(); toast(errText(e, '사람을 찾지 못해 배경 흐림을 쓸 수 없어요.'), true);
+      }
+    }, 90);
+  }
   function sync() {
     const s = session.spec;
     dialog.querySelectorAll('[data-filter]').forEach(b => { const on = b.dataset.filter === s.filter; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
@@ -409,6 +610,10 @@
     $('decoZoom').value = Math.round(s.crop.zoom * 100);
     dialog.querySelectorAll('[data-adj]').forEach(r => { const v = Number(s.adj?.[r.dataset.adj]) || 0; r.value = v; dialog.querySelector(`[data-adjv="${r.dataset.adj}"]`).textContent = v > 0 ? '+' + v : v; });
     $('decoDeleteMy').hidden = !String(s.filter).startsWith('my:');
+    $('decoBokeh').value = s.bokeh || 0; $('decoBokehValue').textContent = s.bokeh ? s.bokeh + '%' : '끔';
+    const hasDbl = !!(session.second && s.dbl);
+    $('decoDblRow').hidden = !hasDbl; $('decoDblClear').hidden = !hasDbl; $('decoDblPick').textContent = hasDbl ? '다른 사진으로 바꾸기' : '겹칠 사진 고르기';
+    if (hasDbl) { $('decoDblAmount').value = s.dbl.amount ?? 60; $('decoDblValue').textContent = (s.dbl.amount ?? 60) + '%'; dialog.querySelectorAll('[data-dbl]').forEach(b => { const on = b.dataset.dbl === s.dbl.mode; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); }
     const st = (s.stickers || [])[session.sel];
     $('decoSelRow').hidden = !st;
     if (st) { $('decoStSize').value = Math.round(st.s * 100); $('decoStRot').value = st.r || 0; }
@@ -416,13 +621,13 @@
     const fxNow = useSel ? st.fx : (session.fx || 'neon'), colNow = useSel ? st.color : (session.scolor || 'pink');
     dialog.querySelectorAll('[data-fx]').forEach(b => { const on = b.dataset.fx === fxNow; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
     dialog.querySelectorAll('[data-scolor]').forEach(b => { const on = b.dataset.scolor === colNow; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
-    $('decoHint').textContent = tab === 'sticker' ? ((s.stickers || []).length ? '스티커를 끌어서 옮기고, 눌러서 고른 뒤 크기·회전을 바꿔요.' : '이모티콘을 누르거나 글씨를 써서 붙여보세요.') : movable() ? '사진을 끌어서 보일 부분을 고를 수 있어요.' : s.ratio === 'orig' ? '인스타용 비율을 고르면 1080px 너비로 맞춰요.' : '사진 전체가 보이도록 여백을 넣어요.';
+    $('decoHint').textContent = tab === 'sticker' ? ((s.stickers || []).length ? '스티커를 끌어서 옮기고, 눌러서 고른 뒤 크기·회전을 바꿔요.' : '이모티콘을 누르거나 글씨를 써서 붙여보세요.') : movable() ? '사진을 끌어서 보일 부분을 고를 수 있어요.' : s.ratio === 'orig' ? '비율을 고르면 1080px 너비로 맞춰요.' : '사진 전체가 보이도록 여백을 넣어요.';
   }
   function thumbs() {
     const box = $('decoFilters'); box.replaceChildren();
     const t = document.createElement('canvas'); const s = 72 / Math.max(session.preview.width, session.preview.height);
     t.width = Math.max(1, Math.round(session.preview.width * s)); t.height = Math.max(1, Math.round(session.preview.height * s));
-    for (const f of [...myFilters().map(m => ({ id: 'my:' + m.id, name: '★ ' + m.name, p: m.p })), ...FILTERS]) {
+    for (const f of [...myFilters().map(m => ({ id: 'my:' + m.id, name: '★ ' + m.name, p: m.p })), FILTERS[0], ...FILTERS.filter(f => f.group === '효과'), ...FILTERS.slice(1).filter(f => f.group !== '효과')]) {
       composeCore(t, session.preview, { ...DEFAULT, filter: f.id, strength: 100, adj: {} });
       const b = document.createElement('button'); b.type = 'button'; b.dataset.filter = f.id;
       const img = document.createElement('img'); img.alt = ''; img.src = t.toDataURL('image/jpeg', .8);
@@ -449,17 +654,25 @@
       if (!session.spec.adj) session.spec.adj = {};
       if (!Array.isArray(session.spec.stickers)) session.spec.stickers = [];
       session.sel = -1;
+      session.view = null; session.second = item.decoSecond || null;
+      session.secondPreview = session.second ? await oriented(session.second, 0, 900) : null;
+      if (!session.second) session.spec.dbl = null;
     } catch (e) { toast('사진을 열지 못했어요. 다시 시도해주세요.', true); return; }
     resize(); thumbs();
     dialog.querySelector('[data-dtab="filter"]').click();
+    if (session.spec.bokeh || session.spec.dbl) prepareView();
     $('decoAll').hidden = state.items.filter(i => i.sourceType !== 'pdf').length < 2;
     dialog.showModal();
   }
 
   // 한 장에 꾸미기를 적용한다 (글씨가 있으면 꾸민 사진 위에 다시 얹는다).
-  async function applyTo(item, base, spec) {
+  async function applyTo(item, base, spec, secondFile) {
     if (session) session.date = new Date((item.originalFile || item.file).lastModified || Date.now());
-    const src = await oriented(base.file, base.rotation, 4096);
+    const raw = await oriented(base.file, base.rotation, 4096);
+    const second = secondFile && spec.dbl ? await oriented(secondFile, 0, 2400) : null;
+    const src = await prepare(raw, spec, second, {});
+    if (src !== raw) raw.width = raw.height = 1;
+    if (second) second.width = second.height = 1;
     const f = frameSize(spec, src, spec.ratio === 'orig' ? 4096 : 1920);
     const out = document.createElement('canvas'); out.width = f.w; out.height = f.h;
     compose(out, src, spec);
@@ -480,7 +693,7 @@
     const width = out.width, height = out.height; out.width = out.height = 1;
     if (!item.editBackup) item.editBackup = { file: item.file, sourceType: item.sourceType, pageIndex: item.pageIndex, width: item.width, height: item.height, rotation: item.rotation, url: item.url };
     else if (item.url !== item.editBackup.url) URL.revokeObjectURL(item.url);
-    item.decoBase = base; item.decoSpec = JSON.parse(JSON.stringify(spec));
+    item.decoBase = base; item.decoSpec = JSON.parse(JSON.stringify(spec)); item.decoSecond = secondFile && spec.dbl ? secondFile : null;
     const name = stem + '_꾸미기.jpg';
     item.file = new File([finalBlob], name, { type: 'image/jpeg' });
     item.sourceType = 'photo'; delete item.pageIndex;
@@ -496,17 +709,17 @@
 
   async function finish(mode) {
     if (!session) return;
-    const { item, base, spec } = session;
+    const { item, base, spec, second } = session;
     const buttons = ['decoApply', 'decoSave', 'decoAll'].map($).filter(Boolean);
     buttons.forEach(b => b.disabled = true);
     try {
-      const r = await applyTo(item, base, spec);
+      const r = await applyTo(item, base, spec, second);
       if (mode === 'all') {
         const others = state.items.filter(i => i !== item && i.sourceType !== 'pdf');
         let n = 1;
         for (const o of others) {
           $('decoAll').textContent = '적용 중… ' + (n + 1) + ' / ' + (others.length + 1);
-          try { await applyTo(o, await baseFor(o), { ...JSON.parse(JSON.stringify(spec)), crop: { x: .5, y: .5, zoom: 1 } }); n++; } catch (_) {}
+          try { await applyTo(o, await baseFor(o), { ...JSON.parse(JSON.stringify(spec)), crop: { x: .5, y: .5, zoom: 1 } }, second); n++; } catch (_) {}
         }
         dialog.close(); render();
         toast(n + '장에 같은 꾸미기를 적용했어요.');
