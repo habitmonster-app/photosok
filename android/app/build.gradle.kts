@@ -25,12 +25,12 @@ val uploadStore = System.getenv("UPLOAD_KEYSTORE_PATH")
 
 android {
     namespace = "com.habitmonster.photosok"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.habitmonster.photosok"
         minSdk = 29
-        targetSdk = 35
+        targetSdk = 36
         // CI 빌드 번호를 버전으로: 덮어 설치 가능
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
         versionName = "1.30." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
