@@ -88,6 +88,17 @@
     { id: 'trip', name: '여행', items: ['✈️', '🧳', '🗺️', '📸', '🏖️', '🌊', '⛰️', '🏕️', '🚗', '🚂', '🌅', '🗼', '🌴', '☀️', '🌙', '☁️'] },
     { id: 'food', name: '음식', items: ['🍰', '☕', '🍩', '🍕', '🍔', '🍜', '🍣', '🍦', '🍑', '🥐', '🧋', '🍺', '🥗', '🍪', '🍫', '🍉'] },
   ];
+  // 그림 스티커 모음: dist/stickers/<모음>/N.webp (사진집사가 받은 원본 그림만 사용)
+  const ART = [['love', '러브'], ['animal', '동물'], ['party', '축하'], ['food', '음식'], ['travel', '여행'], ['weather', '날씨'], ['word', '말풍선']]
+    .map(([id, name]) => ({ id, name, items: Array.from({ length: 16 }, (_, i) => `stickers/${id}/${i + 1}.webp`) }));
+  const artCache = new Map();
+  const artImg = src => {
+    let im = artCache.get(src);
+    if (!im) { im = new Image(); im.decoding = 'async'; im.src = src; artCache.set(src, im); }
+    return im.complete && im.naturalWidth ? im : null;
+  };
+  const warmOne = src => { artImg(src); const im = artCache.get(src); return im.decode ? im.decode().catch(() => {}) : null; };
+  const warmArt = list => Promise.all((list || []).filter(s => s.t === 'art').map(s => s.src).map(src => { artImg(src); const im = artCache.get(src); return im.decode ? im.decode().catch(() => {}) : null; }));
   // 라벨 스티커: 누르면 바로 붙는 글씨 꾸밈 (테이프·도장·라벨 모양)
   const LABELS = [
     { text: 'OOTD', fx: 'tape', color: 'pink' }, { text: '오늘의 기록', fx: 'tag', color: 'yellow' }, { text: 'D-DAY', fx: 'badge', color: 'red' },
@@ -102,7 +113,7 @@
   function stickerBox(ctx, st, w, h) {
     const px = Math.max(6, st.s * Math.min(w, h));
     if (st.t === 'emoji') return { hw: px * .62, hh: px * .62, px };
-    if (st.t === 'img') { const im = window.PhotoSokMyStickers?.image(st.id), a = im ? im.width / im.height : 1; return { hw: (a >= 1 ? px : px * a) / 2, hh: (a >= 1 ? px / a : px) / 2, px, im }; }
+    if (st.t === 'img' || st.t === 'art') { const im = st.t === 'art' ? artImg(st.src) : window.PhotoSokMyStickers?.image(st.id), a = im ? im.width / im.height : 1; return { hw: (a >= 1 ? px : px * a) / 2, hh: (a >= 1 ? px / a : px) / 2, px, im }; }
     ctx.save(); ctx.font = stickerFont(st, px);
     const lines = String(st.text || '').split('\n');
     const widest = Math.max(...lines.map(l => ctx.measureText(l).width), px);
@@ -117,7 +128,7 @@
       ctx.translate(st.x * w, st.y * h); ctx.rotate((st.r || 0) * Math.PI / 180);
       ctx.font = stickerFont(st, px); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       if (st.t === 'emoji') ctx.fillText(st.e, 0, px * .04);
-      else if (st.t === 'img') { if (b.im) ctx.drawImage(b.im, -b.hw, -b.hh, b.hw * 2, b.hh * 2); }
+      else if (st.t === 'img' || st.t === 'art') { if (b.im) ctx.drawImage(b.im, -b.hw, -b.hh, b.hw * 2, b.hh * 2); }
       else {
         const T = window.PhotoSokText, color = (T?.COLORS || {})[st.color] || '#ffffff';
         const lh = px * 1.25, ys = b.lines.map((_, k) => -b.lines.length * lh / 2 + lh * (k + .5));
@@ -457,9 +468,9 @@
       </div>
       <div id="decoStickerPane" hidden>
         <p class="deco-label">스티커 모음</p>
-        <div class="deco-packs" id="decoPacks" role="tablist" aria-label="스티커 모음"><button type="button" data-pack="mine">내 스티커</button>${PACKS.map(p => `<button type="button" data-pack="${p.id}">${p.name}</button>`).join('')}<button type="button" data-pack="label">라벨</button></div>
+        <div class="deco-packs" id="decoPacks" role="tablist" aria-label="스티커 모음">${ART.map(p => `<button type="button" data-pack="${p.id}">${p.name}</button>`).join('')}<button type="button" data-pack="mine">내 스티커</button><button type="button" data-pack="emoji">이모지</button><button type="button" data-pack="label">글씨 라벨</button></div>
         <div class="deco-emojis" id="decoEmojis" role="group" aria-label="스티커"></div>
-        <div class="deco-adj-actions"><button type="button" class="small-button" id="decoFaceStick">고른 이모티콘을 얼굴에 붙이기</button></div>
+        <div class="deco-adj-actions"><button type="button" class="small-button" id="decoFaceStick">고른 스티커를 얼굴에 붙이기</button></div>
         <p class="deco-label">글씨</p>
         <div class="deco-text-add"><input type="text" id="decoText" maxlength="40" placeholder="넣을 글씨" aria-label="넣을 글씨"><button type="button" class="small-button" id="decoTextAdd">글씨 붙이기</button></div>
         <div class="text-row wrap" id="decoFx" role="group" aria-label="글씨 효과">${TEXT_FX.map(f => `<button type="button" data-fx="${f.id}">${f.name}</button>`).join('')}</div>
@@ -504,22 +515,24 @@
     const showPack = async id => {
       session.pack = id;
       dialog.querySelectorAll('[data-pack]').forEach(b => { const on = b.dataset.pack === id; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
-      const box = $('decoEmojis'); box.replaceChildren(); box.classList.toggle('labels', id === 'label'); box.classList.toggle('mine', id === 'mine');
+      const box = $('decoEmojis'); box.replaceChildren(); box.classList.toggle('labels', id === 'label'); const art = ART.find(p => p.id === id); box.classList.toggle('mine', id === 'mine' || !!art);
       if (id === 'label') {
         LABELS.forEach(l => { const b = document.createElement('button'); b.type = 'button'; b.textContent = l.text; b.className = 'label-chip fx-' + l.fx; b.onclick = () => add({ t: 'text', text: l.text, fx: l.fx, color: l.color, s: .075 }); box.append(b); });
+      } else if (art) {
+        art.items.forEach(src => { const b = document.createElement('button'); b.type = 'button'; const img = document.createElement('img'); img.src = src; img.alt = art.name + ' 스티커'; img.loading = 'lazy'; b.append(img); b.onclick = async () => { await warmOne(src); session.lastArt = src; add({ t: 'art', src, s: .26 }); }; box.append(b); });
       } else if (id === 'mine') {
         const M = window.PhotoSokMyStickers, list = M ? await M.list() : [];
         if (session.pack !== 'mine') return;
         list.forEach(m => { const b = document.createElement('button'); b.type = 'button'; const img = document.createElement('img'); img.src = m.url; img.alt = '내 스티커'; b.append(img); b.onclick = () => add({ t: 'img', id: m.id, s: .3 }); box.append(b); });
         const mk = document.createElement('button'); mk.type = 'button'; mk.className = 'make'; mk.textContent = '+ 만들기'; mk.onclick = () => { dialog.close(); window.PhotoSokStickerMaker?.start(); }; box.append(mk);
       } else {
-        PACKS.find(p => p.id === id).items.forEach(e => { const b = document.createElement('button'); b.type = 'button'; b.textContent = e; b.dataset.emoji = e; b.onclick = () => { session.lastEmoji = e; add({ t: 'emoji', e, s: .16 }); }; box.append(b); });
+        PACKS.flatMap(p => p.items).forEach(e => { const b = document.createElement('button'); b.type = 'button'; b.textContent = e; b.dataset.emoji = e; b.onclick = () => { session.lastEmoji = e; session.lastArt = null; add({ t: 'emoji', e, s: .16 }); }; box.append(b); });
       }
     };
     dialog.querySelectorAll('[data-pack]').forEach(b => b.onclick = () => showPack(b.dataset.pack));
     showPackRef = showPack;
     $('decoFaceStick').onclick = async () => {
-      const e = session.lastEmoji || '😎', btn = $('decoFaceStick'); btn.disabled = true;
+      const art = session.lastArt, e = session.lastEmoji || '😎', btn = $('decoFaceStick'); btn.disabled = true;
       try {
         const r = await PhotoSokFace.detect(session.view || session.preview);
         if (!r.faces.length) { toast('얼굴을 찾지 못했어요.', true); return; }
@@ -529,10 +542,10 @@
         for (const f of r.faces.slice(0, 10)) {
           let x = f.cx, y = (f.top + f.chinY) / 2, size = (f.chinY - f.top) * sh * 1.35;
           if (l) { x = (cw / 2 + l.dx + (x - .5) * sw * l.scale) / cw; y = (ch / 2 + l.dy + (y - .5) * sh * l.scale) / ch; size *= l.scale; }
-          stickers().push({ t: 'emoji', e, x, y, r: 0, s: Math.min(.9, size / Math.min(cw, ch)) });
+          stickers().push({ ...(art ? { t: 'art', src: art } : { t: 'emoji', e }), x, y, r: 0, s: Math.min(.9, size / Math.min(cw, ch)) });
         }
         session.sel = stickers().length - 1; sync(); schedule();
-        toast(r.faces.length + '명의 얼굴에 ' + e + ' 를 붙였어요.');
+        toast(art ? '얼굴 ' + Math.min(10, r.faces.length) + '곳에 고른 스티커를 붙였어요.' : r.faces.length + '명의 얼굴에 ' + e + ' 를 붙였어요.');
       } catch (err) { toast(errText(err, '얼굴을 찾지 못했어요.'), true); }
       finally { btn.disabled = false; }
     };
@@ -746,7 +759,8 @@
     dialog.querySelector('[data-dtab="filter"]').click();
     if (session.spec.bokeh || session.spec.dbl) prepareView();
     await window.PhotoSokMyStickers?.warm(session.spec.stickers);
-    showPackRef?.(session.pack || 'face');
+    await warmArt(session.spec.stickers);
+    showPackRef?.(session.pack || 'love');
     $('decoAll').hidden = state.items.filter(i => i.sourceType !== 'pdf').length < 2;
     dialog.showModal();
   }

@@ -812,3 +812,18 @@ body[data-screen="work"] .ad-free { display: none; }
 #retouchDialog .rt-tools { grid-template-columns: 1fr 1fr; }
 #rtCanvas { display: block; max-width: 100%; max-height: 46dvh; width: auto; height: auto; border-radius: 4px; touch-action: none; cursor: crosshair; }
 #retouchDialog .rt-stage { position: sticky; top: -1px; z-index: 3; }
+
+/* v1.29: 앱 안 사진 찍기 */
+.cam-opts { display: grid; gap: 8px; }
+.cam-chips { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.cam-chips button { min-height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.06); color: #f2f3f1; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.cam-chips button.on { background: #c8f04a; border-color: #c8f04a; color: #111; }
+.cam-count { position: absolute; inset: 0; margin: 0; display: grid; place-items: center; font-size: 96px; font-weight: 800; color: #fff; text-shadow: 0 4px 24px rgba(0,0,0,.6); pointer-events: none; }
+.cam-count[hidden] { display: none; }
+.cam-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+.cam-flash.go { animation: camFlash .35s ease-out; }
+@keyframes camFlash { from { opacity: .85; } to { opacity: 0; } }
+.cam-done { justify-self: end; display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 14px; border: 0; background: rgba(255,255,255,.1); color: #f2f3f1; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; grid-column: 3; grid-row: 1; }
+.cam-done img { width: 44px; height: 44px; object-fit: cover; border-radius: 10px; }
+.cam-done[hidden] { display: none; }
+.cam-bar .cam-spacer { grid-column: 3; grid-row: 1; }

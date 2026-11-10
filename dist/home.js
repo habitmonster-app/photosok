@@ -90,6 +90,7 @@
   directTool('maskTile', () => window.PhotoSokMask?.start());
   directTool('sharpTile', () => window.PhotoSokSharpen?.start());
   directTool('retouchTile', () => window.PhotoSokRetouch?.start());
+  directTool('cameraTile', () => window.PhotoSokCamera?.startFree());
   directTool('stickerTile', () => window.PhotoSokStickerMaker?.start());
   $('cleanTile')?.addEventListener('click', () => window.PhotoSokCleanup?.open());
   $('specTile')?.addEventListener('click', () => {

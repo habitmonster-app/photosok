@@ -2,11 +2,19 @@
 // 증명사진 찍기: 카메라 화면 위에 얼굴 윤곽 가이드를 그리고, 얼굴이 가이드에 맞는지 알려준다.
 // 찍은 사진은 기기 안에서만 쓰고, 담은 뒤 규격 자동 맞춤이 그대로 적용된다.
 // 카메라를 쓸 수 없으면 기본 카메라 앱(파일 선택의 촬영)으로 넘어간다.
+// mode 'free' 는 그냥 사진 찍기: 비율·타이머·격자, 여러 장 찍고 "완료"를 누르면 한꺼번에 담는다.
 (() => {
   const $ = id => document.getElementById(id);
   let dialog = null, stream = null, facing = 'user', timer = 0, busy = false, last = null;
+  let mode = 'id', ratio = '3:4', delay = 0, grid = true, shots = [], toGallery = false, counting = false;
+  const RATIOS = { '3:4': [3, 4], '1:1': [1, 1], '9:16': [9, 16], 'full': null };
 
   function frameSize() {
+    if (mode === 'free') {
+      const r = RATIOS[ratio], v = $('camVideo');
+      if (r) return { w: r[0] * 100, h: r[1] * 100 };
+      return v?.videoWidth ? { w: v.videoWidth, h: v.videoHeight } : { w: 300, h: 400 };
+    }
     const spec = SPECS[state.spec];
     return spec ? { w: spec.w, h: spec.h } : { w: 354, h: 472 };
   }
@@ -16,18 +24,42 @@
     dialog = document.createElement('dialog');
     dialog.id = 'camDialog'; dialog.className = 'cam-dialog';
     dialog.innerHTML = `
-      <div class="cam-head"><h2>얼굴 맞춰 찍기</h2><button type="button" class="icon-button" id="camClose" aria-label="찍기 닫기"><svg><use href="#i-close"/></svg></button></div>
-      <div class="cam-stage" id="camStage"><video id="camVideo" playsinline muted autoplay></video><svg id="camGuide" aria-hidden="true"></svg><p class="cam-status" id="camStatus">카메라를 켜는 중…</p></div>
-      <p class="cam-tip">밝은 곳에서 단색 벽을 뒤에 두고, 정면을 보고 찍으세요. 안경 반사와 그림자를 피하세요.</p>
-      <div class="cam-bar"><button type="button" class="icon-button cam-flip" id="camFlip" aria-label="앞뒤 카메라 바꾸기"><svg><use href="#i-convert"/></svg></button><button type="button" class="cam-shutter" id="camShot" aria-label="찍기"></button><span class="cam-spacer"></span></div>`;
+      <div class="cam-head"><h2 id="camTitle">얼굴 맞춰 찍기</h2><button type="button" class="icon-button" id="camClose" aria-label="찍기 닫기"><svg><use href="#i-close"/></svg></button></div>
+      <div class="cam-stage" id="camStage"><video id="camVideo" playsinline muted autoplay></video><svg id="camGuide" aria-hidden="true"></svg><p class="cam-status" id="camStatus">카메라를 켜는 중…</p><p class="cam-count" id="camCount" hidden></p><div class="cam-flash" id="camFlash"></div></div>
+      <div class="cam-opts" id="camOpts" hidden>
+        <div class="cam-chips" role="group" aria-label="비율">${Object.keys(RATIOS).map(k => `<button type="button" data-camratio="${k}">${k === 'full' ? '전체' : k}</button>`).join('')}</div>
+        <div class="cam-chips"><button type="button" id="camTimer" aria-label="타이머">타이머 끔</button><button type="button" id="camGridBtn" aria-label="격자">격자</button><button type="button" id="camGallery" aria-label="갤러리에도 저장">갤러리 저장</button></div>
+      </div>
+      <p class="cam-tip" id="camTip">밝은 곳에서 단색 벽을 뒤에 두고, 정면을 보고 찍으세요. 안경 반사와 그림자를 피하세요.</p>
+      <div class="cam-bar"><button type="button" class="icon-button cam-flip" id="camFlip" aria-label="앞뒤 카메라 바꾸기"><svg><use href="#i-convert"/></svg></button><button type="button" class="cam-shutter" id="camShot" aria-label="찍기"></button><span class="cam-spacer" id="camSpacer"></span><button type="button" class="cam-done" id="camDone" hidden><img id="camThumb" alt=""><span>완료</span></button></div>`;
     document.body.append(dialog);
     $('camClose').onclick = () => dialog.close();
     $('camFlip').onclick = () => { facing = facing === 'user' ? 'environment' : 'user'; start(); };
-    $('camShot').onclick = shoot;
-    dialog.addEventListener('close', stop);
+    $('camShot').onclick = () => (mode === 'free' ? shootFree() : shoot());
+    $('camDone').onclick = () => dialog.close();
+    dialog.querySelectorAll('[data-camratio]').forEach(b => b.onclick = () => { ratio = b.dataset.camratio; drawGuide(); syncOpts(); });
+    $('camTimer').onclick = () => { delay = delay === 0 ? 3 : delay === 3 ? 10 : 0; syncOpts(); };
+    $('camGridBtn').onclick = () => { grid = !grid; drawGuide(); syncOpts(); };
+    $('camGallery').onclick = () => { toGallery = !toGallery; syncOpts(); };
+    dialog.addEventListener('close', () => { stop(); if (mode === 'free') flushShots(); });
   }
 
+  function syncOpts() {
+    dialog.querySelectorAll('[data-camratio]').forEach(b => { const on = b.dataset.camratio === ratio; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+    $('camTimer').textContent = delay ? '타이머 ' + delay + '초' : '타이머 끔'; $('camTimer').classList.toggle('on', !!delay);
+    $('camGridBtn').classList.toggle('on', grid); $('camGridBtn').setAttribute('aria-pressed', grid);
+    $('camGallery').classList.toggle('on', toGallery); $('camGallery').setAttribute('aria-pressed', toGallery);
+  }
   function drawGuide() {
+    if (mode === 'free') {
+      const { w, h } = frameSize(), g = $('camGuide');
+      $('camStage').style.aspectRatio = w + ' / ' + h;
+      $('camStage').style.width = `min(100%, calc((100dvh - 300px) * ${(w / h).toFixed(4)}))`;
+      g.setAttribute('viewBox', '0 0 300 300'); g.setAttribute('preserveAspectRatio', 'none');
+      g.innerHTML = grid ? [100, 200].map(v => `<line x1="${v}" y1="0" x2="${v}" y2="300" stroke="rgba(255,255,255,.45)" stroke-width="1" vector-effect="non-scaling-stroke"/><line x1="0" y1="${v}" x2="300" y2="${v}" stroke="rgba(255,255,255,.45)" stroke-width="1" vector-effect="non-scaling-stroke"/>`).join('') : '';
+      return;
+    }
+    $('camGuide').removeAttribute('preserveAspectRatio'); $('camStage').style.width = '';
     const { w, h } = frameSize(), hd = head();
     const W = 300, H = Math.round(300 * h / w);
     const top = hd.top * H, chin = (hd.top + hd.ratio) * H, ry = (chin - top) / 2, rx = ry * .72, cy = top + ry;
@@ -59,6 +91,8 @@
     const v = $('camVideo');
     v.srcObject = stream; v.classList.toggle('mirror', facing === 'user');
     try { await v.play(); } catch (_) {}
+    if (mode === 'free') { setState(null, ''); $('camStatus').hidden = true; if (ratio === 'full') drawGuide(); return; }
+    $('camStatus').hidden = false;
     setState(null, '얼굴을 점선 안에 맞춰주세요');
     window.PhotoSokFace?.preload?.();
     clearInterval(timer); timer = setInterval(check, 700);
@@ -84,7 +118,7 @@
   }
 
   async function check() {
-    if (busy || !stream || !dialog.open || !window.PhotoSokFace) return;
+    if (mode === 'free' || busy || !stream || !dialog.open || !window.PhotoSokFace) return;
     const c = grab(360); if (!c) return;
     busy = true;
     try {
@@ -123,13 +157,51 @@
     toast('찍은 사진을 담았어요. 얼굴 기준으로 맞춰요.');
   }
 
-  function open() {
+  function stamp() { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
+  async function shootFree() {
+    if (!stream || counting) return;
+    if (shots.length >= 20) { toast('한 번에 20장까지 찍을 수 있어요. 완료를 눌러 담아주세요.', true); return; }
+    if (delay) {
+      counting = true; const c = $('camCount'); c.hidden = false;
+      for (let n = delay; n > 0; n--) { if (!dialog.open) { counting = false; c.hidden = true; return; } c.textContent = n; await new Promise(r => setTimeout(r, 1000)); }
+      c.hidden = true; counting = false;
+    }
+    const cv = grab(0); if (!cv) return;
+    const f = $('camFlash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', .93)); 
+    const thumb = cv.toDataURL('image/jpeg', .5); cv.width = cv.height = 1;
+    if (!blob) { toast('사진을 찍지 못했어요. 다시 시도해주세요.', true); return; }
+    let name = `사진집사_${stamp()}.jpg`; if (shots.some(x => x.name === name)) name = name.replace('.jpg', '_' + (shots.length + 1) + '.jpg');
+    const file = new File([blob], name, { type: 'image/jpeg', lastModified: Date.now() });
+    shots.push(file);
+    $('camThumb').src = thumb; $('camDone').hidden = false; $('camDone').querySelector('span').textContent = '완료 ' + shots.length;
+    if (toGallery) { try { const r = await FileDelivery.save(blob, name); if (r.status === 'failed') toast(r.message || '갤러리에 저장하지 못했어요.', true); } catch (_) {} }
+  }
+  async function flushShots() {
+    const list = shots; shots = [];
+    if (!list.length) return;
+    await addFiles(list);
+    window.PhotoSokScreen?.goWork('사진 찍기');
+    toast(list.length + '장을 담았어요.' + (toGallery ? ' 갤러리에도 저장했어요.' : ''));
+  }
+
+  function open(opts = {}) {
+    mode = opts.mode === 'free' ? 'free' : 'id';
     if (!navigator.mediaDevices?.getUserMedia) { $('capture').click(); return; }
     if (!dialog) build();
-    drawGuide();
+    if (mode === 'free') { facing = 'environment'; shots = []; toGallery = document.documentElement.classList.contains('in-app'); }
+    else facing = 'user';
+    dialog.classList.toggle('free', mode === 'free');
+    $('camTitle').textContent = mode === 'free' ? '사진 찍기' : '얼굴 맞춰 찍기';
+    $('camOpts').hidden = mode !== 'free';
+    $('camTip').textContent = mode === 'free' ? '여러 장 찍은 뒤 완료를 누르면 한꺼번에 담겨요. 사진은 폰 안에서만 써요.' : '밝은 곳에서 단색 벽을 뒤에 두고, 정면을 보고 찍으세요. 안경 반사와 그림자를 피하세요.';
+    $('camDone').hidden = true; $('camCount').hidden = true;
+    syncOpts(); drawGuide();
     dialog.showModal();
     start();
   }
+  // 처음 화면 "사진 찍기": 작업 화면으로 넘어가 찍은 사진을 담는다
+  function startFree() { open({ mode: 'free' }); }
 
-  window.PhotoSokCamera = Object.freeze({ open, _check: check });
+  window.PhotoSokCamera = Object.freeze({ open, startFree, _check: check });
 })();
