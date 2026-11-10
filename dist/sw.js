@@ -1,7 +1,7 @@
 'use strict';
 // 사진집사 서비스 워커: 앱을 설치형으로 쓰고, 인터넷 없이도 열리게 한다.
 // 사용자 파일은 외부로 보내지 않는다. 공유로 받은 파일도 이 기기 캐시에 잠깐 두었다가 앱이 꺼내면 지운다.
-const VERSION = 'v1.30.1';
+const VERSION = 'v1.30.2';
 const SHELL = 'photosok-shell-' + VERSION;
 const TOOLS = 'photosok-tools-' + VERSION;
 const INBOX = 'photosok-share-inbox';
