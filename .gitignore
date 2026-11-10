@@ -1,1 +1,5 @@
 tests/fixtures/.*-local.*
+# 아이폰 빌드 중 생기는 파일
+ios/www/
+ios/*.xcodeproj/
+ios/build/
