@@ -18,6 +18,16 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 8
+      # 앞선 배포가 멈춰 있으면 새 배포가 막힌다. 최근 커밋들의 배포를 취소해 둔다(없으면 무시).
+      - name: 멈춘 이전 배포 취소
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for sha in $(git log -8 --format=%H | tail -n +2); do
+            gh api -X POST "repos/${{ github.repository }}/pages/deployments/$sha/cancel" >/dev/null 2>&1 && echo "취소: $sha" || true
+          done
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
