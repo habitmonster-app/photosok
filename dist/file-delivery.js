@@ -14,10 +14,10 @@
   let historySettled = Promise.resolve();
 
   function sanitizeName(value, mime = '') {
-    let name = String(value || '사진쏙_파일').normalize('NFC')
+    let name = String(value || '사진집사_파일').normalize('NFC')
       .replace(/[\u0000-\u001f\u007f-\u009f]/g, '')
       .replace(/[<>:"/\\|?*]/g, '_').replace(/^[.\s]+|[.\s]+$/g, '');
-    if (!name) name = '사진쏙_파일';
+    if (!name) name = '사진집사_파일';
     if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name)) name = '_' + name;
     const type = MIME[mime];
     if (type && !type.accept.some(ext => name.toLowerCase().endsWith(ext))) {
@@ -40,7 +40,7 @@
   function shareableFiles(input) {
     const files = Array.from(input || []);
     if (!files.length || files.some(file => !validBlob(file))) return [];
-    return files.map((file, index) => new File([file], sanitizeName(file.name || '사진쏙_' + (index + 1), file.type), { type: file.type || 'application/octet-stream' }));
+    return files.map((file, index) => new File([file], sanitizeName(file.name || '사진집사_' + (index + 1), file.type), { type: file.type || 'application/octet-stream' }));
   }
 
   function supportsShare(files) {

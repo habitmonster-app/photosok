@@ -117,7 +117,7 @@
     c.width = c.height = 1;
     if (!blob) { toast('사진을 찍지 못했어요. 다시 시도해주세요.', true); return; }
     const d = new Date(), p = n => String(n).padStart(2, '0');
-    const name = `사진쏙_증명_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.jpg`;
+    const name = `사진집사_증명_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.jpg`;
     dialog.close();
     await addFiles([new File([blob], name, { type: 'image/jpeg', lastModified: Date.now() })]);
     toast('찍은 사진을 담았어요. 얼굴 기준으로 맞춰요.');

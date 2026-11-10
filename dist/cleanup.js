@@ -52,7 +52,7 @@
     dialog.querySelectorAll('[data-ctab]').forEach(b => { const on = b.dataset.ctab === tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
     const body = $('cleanBody'); body.replaceChildren(); setBar('');
     if (status === 'web') {
-      body.append(el(`<div class="fs-empty"><div class="fs-badge"><svg><use href="#i-image"/></svg></div><h3>안드로이드 앱에서 쓸 수 있어요</h3><p>공간 확보는 휴대폰 갤러리의 사진을 직접 정리하는 기능이라 사진쏙 앱에서만 동작해요.</p></div>`));
+      body.append(el(`<div class="fs-empty"><div class="fs-badge"><svg><use href="#i-image"/></svg></div><h3>안드로이드 앱에서 쓸 수 있어요</h3><p>공간 확보는 휴대폰 갤러리의 사진을 직접 정리하는 기능이라 사진집사 앱에서만 동작해요.</p></div>`));
       return;
     }
     if (status === 'unsupported') {

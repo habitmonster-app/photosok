@@ -69,7 +69,7 @@ import java.util.UUID
 import java.util.concurrent.Executors
 
 /**
- * 사진쏙 안드로이드 앱.
+ * 사진집사 안드로이드 앱.
  * 웹앱(dist/)을 앱 안에 넣어 인터넷 없이 연다. 파일은 기기 밖으로 보내지 않는다(인터넷 권한 없음).
  * 웹이 못 하는 일(갤러리 저장, 다른 앱으로 공유, 공유받기, 카메라)은 여기서 처리한다.
  */
@@ -277,7 +277,7 @@ class MainActivity : Activity() {
 
     private fun launchCamera(): Boolean {
         val dir = File(cacheDir, "camera").apply { mkdirs() }
-        val file = File(dir, "사진쏙_촬영_${System.currentTimeMillis()}.jpg")
+        val file = File(dir, "사진집사_촬영_${System.currentTimeMillis()}.jpg")
         val uri = FileProvider.getUriForFile(this, "$packageName.files", file)
         cameraUri = uri
         val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
@@ -313,7 +313,7 @@ class MainActivity : Activity() {
         }
     }
 
-    // ---- 공유받기 (다른 앱 → 사진쏙) ----
+    // ---- 공유받기 (다른 앱 → 사진집사) ----
     private fun handleIncoming(intent: Intent?) {
         intent ?: return
         val uris = ArrayList<Uri>()
@@ -365,12 +365,12 @@ class MainActivity : Activity() {
 
     // ---- 저장 / 공유 보내기 ----
     private fun safeName(name: String): String =
-        name.replace(Regex("[\\\\/:*?\"<>|\\u0000-\\u001f]"), "_").trim().ifEmpty { "사진쏙_파일" }.take(120)
+        name.replace(Regex("[\\\\/:*?\"<>|\\u0000-\\u001f]"), "_").trim().ifEmpty { "사진집사_파일" }.take(120)
 
-    /** 이미지 → 갤러리 '사진쏙' 앨범, PDF·ZIP → 다운로드/사진쏙 폴더 */
+    /** 이미지 → 갤러리 '사진집사' 앨범, PDF·ZIP → 다운로드/사진집사 폴더 */
     private fun saveToDevice(file: File, mime: String): JSONObject {
         val isImage = mime.startsWith("image/")
-        val folder = if (isImage) Environment.DIRECTORY_PICTURES + "/사진쏙" else Environment.DIRECTORY_DOWNLOADS + "/사진쏙"
+        val folder = if (isImage) Environment.DIRECTORY_PICTURES + "/사진집사" else Environment.DIRECTORY_DOWNLOADS + "/사진집사"
         val collection = if (isImage) MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
                          else MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
         val values = ContentValues().apply {
@@ -386,7 +386,7 @@ class MainActivity : Activity() {
         } catch (e: Exception) {
             contentResolver.delete(uri, null, null); throw e
         }
-        val where = if (isImage) "갤러리의 '사진쏙' 앨범" else "'내 파일 → 다운로드 → 사진쏙' 폴더"
+        val where = if (isImage) "갤러리의 '사진집사' 앨범" else "'내 파일 → 다운로드 → 사진집사' 폴더"
         return JSONObject().put("status", "saved").put("where", where)
     }
 
@@ -497,7 +497,7 @@ class MainActivity : Activity() {
     /** 줄인 사진(file)을 원본(id)과 같은 앨범에 새 사진으로 넣는다. 찍은 날짜·사진 정보(EXIF)는 원본에서 옮긴다. */
     private fun storeReplacement(file: File, originalId: Long): JSONObject {
         val orig = android.content.ContentUris.withAppendedId(imagesUri, originalId)
-        var name = "photo.jpg"; var rel = Environment.DIRECTORY_PICTURES + "/사진쏙/"; var taken = 0L
+        var name = "photo.jpg"; var rel = Environment.DIRECTORY_PICTURES + "/사진집사/"; var taken = 0L
         contentResolver.query(orig, arrayOf(MediaStore.Images.Media.DISPLAY_NAME, MediaStore.Images.Media.RELATIVE_PATH, MediaStore.Images.Media.DATE_TAKEN), null, null, null)?.use { c ->
             if (c.moveToFirst()) {
                 name = c.getString(0) ?: name

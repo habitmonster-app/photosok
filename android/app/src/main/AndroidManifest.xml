@@ -31,7 +31,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- 갤러리·파일 앱에서 "공유 → 사진쏙" -->
+            <!-- 갤러리·파일 앱에서 "공유 → 사진집사" -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />

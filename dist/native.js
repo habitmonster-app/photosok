@@ -33,7 +33,7 @@
 
   async function share(files) {
     const ids = [];
-    for (const file of files) ids.push(await upload(file, file.name || '사진쏙_파일'));
+    for (const file of files) ids.push(await upload(file, file.name || '사진집사_파일'));
     const result = JSON.parse(bridge.share(JSON.stringify(ids)));
     if (result.status !== 'shared') throw new Error(result.message || 'share failed');
   }
