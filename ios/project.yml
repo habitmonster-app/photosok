@@ -38,7 +38,7 @@ targets:
     dependencies:
       - package: GoogleMobileAds
       - package: GoogleUMP
-        product: UserMessagingPlatform
+        product: GoogleUserMessagingPlatform
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.habitmonster.photosok
