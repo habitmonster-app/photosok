@@ -1,0 +1,37 @@
+# 사진집사 아이폰 앱을 Codemagic(맥 빌드 서비스)에서 만들어 TestFlight에 올린다.
+# Codemagic → 사진집사 앱 → "Start new build" → 이 워크플로(사진집사 iOS) 선택.
+# 서명은 Codemagic 팀에 연결된 App Store Connect 키(아래 integrations 이름)로 자동으로 한다.
+workflows:
+  ios-testflight:
+    name: 사진집사 iOS (TestFlight)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: Codemagic
+    environment:
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.habitmonster.photosok
+    scripts:
+      - name: 웹앱 넣기 + Xcode 프로젝트 만들기
+        script: |
+          rsync -a --delete --exclude sw.js --exclude manifest.webmanifest --exclude .nojekyll dist/ ios/www/
+          brew install xcodegen
+          cd ios && xcodegen generate
+      - name: 서명 파일 적용
+        script: xcode-project use-profiles --project ios/Sajinjipsa.xcodeproj
+      - name: 앱 만들기 (.ipa)
+        script: |
+          BUILD=$((2000 + ${BUILD_NUMBER:-0}))
+          echo "빌드 번호 $BUILD"
+          xcode-project build-ipa \
+            --project ios/Sajinjipsa.xcodeproj \
+            --scheme Sajinjipsa \
+            --archive-xcargs "CURRENT_PROJECT_VERSION=$BUILD"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
