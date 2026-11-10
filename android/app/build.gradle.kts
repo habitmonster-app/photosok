@@ -12,28 +12,28 @@ val copyWeb by tasks.registering(Sync::class) {
     into(layout.buildDirectory.dir("generated/web/www"))
 }
 
-// 애드몹 ID: android/gradle.properties 의 admobAppId·admobBannerId·admobNativeId·admobRewardedId. 없으면 구글 테스트 광고.
+// 애드몹 ID: android/gradle.properties 의 admobAppId·admobBannerId·admobNativeId·admobRewardedId.
+// 실제 ID는 스토어용(release) 빌드에만 쓴다. 테스트(debug) 빌드와 아직 없는 ID는 구글 테스트 광고.
 fun prop(name: String, fallback: String) = (project.findProperty(name) as String?)?.takeIf { it.isNotBlank() } ?: fallback
-val admobAppId = prop("admobAppId", "ca-app-pub-3940256099942544~3347511713")
-val admobBannerId = prop("admobBannerId", "ca-app-pub-3940256099942544/9214589741")
-val admobNativeId = prop("admobNativeId", "ca-app-pub-3940256099942544/2247696110")
-val admobRewardedId = prop("admobRewardedId", "ca-app-pub-3940256099942544/5224354917")
+val TEST_APP = "ca-app-pub-3940256099942544~3347511713"
+val TEST_BANNER = "ca-app-pub-3940256099942544/9214589741"
+val TEST_NATIVE = "ca-app-pub-3940256099942544/2247696110"
+val TEST_REWARDED = "ca-app-pub-3940256099942544/5224354917"
+
+// 출시용 서명 키: CI 비밀값(UPLOAD_KEYSTORE_B64 등)에서. 없으면 release 빌드를 만들지 않는다.
+val uploadStore = System.getenv("UPLOAD_KEYSTORE_PATH")
 
 android {
     namespace = "com.habitmonster.photosok"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.habitmonster.photosok"
         minSdk = 29
-        targetSdk = 34
+        targetSdk = 35
         // CI 빌드 번호를 버전으로: 덮어 설치 가능
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
         versionName = "1.24." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
-        manifestPlaceholders["admobAppId"] = admobAppId
-        buildConfigField("String", "ADMOB_BANNER", "\"$admobBannerId\"")
-        buildConfigField("String", "ADMOB_NATIVE", "\"$admobNativeId\"")
-        buildConfigField("String", "ADMOB_REWARDED", "\"$admobRewardedId\"")
     }
 
     signingConfigs {
@@ -44,10 +44,31 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        if (uploadStore != null) create("upload") {
+            storeFile = file(uploadStore)
+            storePassword = System.getenv("UPLOAD_STORE_PASSWORD")
+            keyAlias = System.getenv("UPLOAD_KEY_ALIAS")
+            keyPassword = System.getenv("UPLOAD_KEY_PASSWORD")
+        }
     }
 
     buildTypes {
-        getByName("debug") { signingConfig = signingConfigs.getByName("debug") }
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("debug")
+            manifestPlaceholders["admobAppId"] = TEST_APP
+            buildConfigField("String", "ADMOB_BANNER", "\"$TEST_BANNER\"")
+            buildConfigField("String", "ADMOB_NATIVE", "\"$TEST_NATIVE\"")
+            buildConfigField("String", "ADMOB_REWARDED", "\"$TEST_REWARDED\"")
+        }
+        getByName("release") {
+            if (uploadStore != null) signingConfig = signingConfigs.getByName("upload")
+            // 웹 화면과 이어진 코드(JavascriptInterface)가 지워지지 않게 코드 줄이기는 끈다.
+            isMinifyEnabled = false
+            manifestPlaceholders["admobAppId"] = prop("admobAppId", TEST_APP)
+            buildConfigField("String", "ADMOB_BANNER", "\"${prop("admobBannerId", TEST_BANNER)}\"")
+            buildConfigField("String", "ADMOB_NATIVE", "\"${prop("admobNativeId", TEST_NATIVE)}\"")
+            buildConfigField("String", "ADMOB_REWARDED", "\"${prop("admobRewardedId", TEST_REWARDED)}\"")
+        }
     }
 
     sourceSets["main"].assets.srcDir(layout.buildDirectory.dir("generated/web"))

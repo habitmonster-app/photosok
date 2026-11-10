@@ -7,7 +7,7 @@ const TOOLS = 'photosok-tools-' + VERSION;
 const INBOX = 'photosok-share-inbox';
 
 const SHELL_FILES = [
-  './', 'index.html', 'licenses.html', 'manifest.webmanifest',
+  './', 'index.html', 'licenses.html', 'privacy.html', 'manifest.webmanifest',
   'style.css', 'document-editor.css', 'file-delivery.css',
   'compress.js', 'crop.js', 'text.js', 'decorate.js', 'face.js', 'idphoto.js', 'mask.js', 'print.js', 'camera.js', 'sharpen.js', 'sheet.js', 'cleanup.js', 'ads.js', 'onboard.js', 'i18n-en.js', 'i18n.js', 'pdf.js', 'pdf-tools.js', 'heic-support.js', 'heic-worker.js',
   'document-editor.js', 'file-delivery.js', 'ui-copy.js', 'app.js', 'submission.js', 'pwa.js', 'native.js', 'home.js', 'quick.js', 'fonts/PretendardVariable-subset.woff2',

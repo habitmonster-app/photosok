@@ -53,6 +53,9 @@ import android.util.Base64
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.PermissionRequest
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -88,6 +91,7 @@ class MainActivity : Activity() {
 
     private lateinit var web: WebView
     private lateinit var adBox: FrameLayout
+    private lateinit var root: LinearLayout
     private var adView: AdView? = null
     private var nativeAd: NativeAd? = null
     private var rewarded: RewardedAd? = null
@@ -161,7 +165,14 @@ class MainActivity : Activity() {
         web.setBackgroundColor(0xFF101213.toInt())
         // 웹 화면 아래에 광고 자리를 따로 둔다(웹 화면을 덮지 않음).
         adBox = FrameLayout(this)
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(0xFF101213.toInt()) }
+        // 안드로이드 15(targetSdk 35)부터 화면이 상태바·내비게이션바 밑까지 그려진다. 그만큼 안쪽으로 띄운다(키보드 포함).
+        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            v.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, ime.bottom))
+            WindowInsetsCompat.CONSUMED
+        }
         root.addView(web, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
         root.addView(adBox, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         setContentView(root)
@@ -201,10 +212,11 @@ class MainActivity : Activity() {
         window.navigationBarColor = color
         web.setBackgroundColor(color)
         if (::adBox.isInitialized) adBox.setBackgroundColor(color)
-        var flags = window.decorView.systemUiVisibility
-        flags = if (dark) flags and android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv() and android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
-                else flags or android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-        window.decorView.systemUiVisibility = flags
+        if (::root.isInitialized) root.setBackgroundColor(color)
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = !dark
+            isAppearanceLightNavigationBars = !dark
+        }
     }
 
     // ---- 앱 안의 웹 파일 ----

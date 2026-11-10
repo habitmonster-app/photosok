@@ -28,12 +28,29 @@ jobs:
           chmod +x gradlew
           ./gradlew :app:assembleDebug --no-daemon
 
+      # 플레이스토어용 앱 번들(.aab): 깃허브 비밀값 UPLOAD_KEY("비밀번호:키파일base64")가 있을 때만 만든다. 실제 광고 ID가 들어간다.
+      - name: 플레이스토어용 앱 번들 만들기
+        id: aab
+        working-directory: android
+        env:
+          UPLOAD_KEY: ${{ secrets.UPLOAD_KEY }}
+        run: |
+          if [ -z "$UPLOAD_KEY" ]; then echo "UPLOAD_KEY 비밀값이 없어 앱 번들은 건너뜀"; exit 0; fi
+          printf '%s' "${UPLOAD_KEY#*:}" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          export UPLOAD_KEYSTORE_PATH="$RUNNER_TEMP/upload.jks" UPLOAD_KEY_ALIAS=upload
+          export UPLOAD_STORE_PASSWORD="${UPLOAD_KEY%%:*}" UPLOAD_KEY_PASSWORD="${UPLOAD_KEY%%:*}"
+          ./gradlew :app:bundleRelease --no-daemon
+          cp app/build/outputs/bundle/release/app-release.aab ../sajinjipsa.aab
+          rm -f "$RUNNER_TEMP/upload.jks"
+          echo "made=1" >> "$GITHUB_OUTPUT"
+
       - name: 폰에서 받을 수 있게 릴리스로 올리기
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk photosok.apk
-          gh release create "build-${{ github.run_number }}" photosok.apk \
-            --title "사진쏙 테스트 빌드 ${{ github.run_number }}" \
-            --notes "휴대폰에서 photosok.apk를 눌러 받은 뒤 설치하세요. 커밋 ${{ github.sha }}" \
+          FILES="photosok.apk"; [ -f sajinjipsa.aab ] && FILES="$FILES sajinjipsa.aab"
+          gh release create "build-${{ github.run_number }}" $FILES \
+            --title "사진집사 빌드 ${{ github.run_number }}" \
+            --notes "photosok.apk: 휴대폰에 바로 설치하는 테스트용(테스트 광고). sajinjipsa.aab: 플레이 콘솔에 올리는 출시용(실제 광고). 커밋 ${{ github.sha }}" \
             --latest
