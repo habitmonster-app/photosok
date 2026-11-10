@@ -37,6 +37,10 @@
     ctx.globalAlpha = Math.min(1, Math.max(.1, (spec.opacity ?? 100) / 100));
     // 정렬에 따라 글줄의 기준 x (블록 가운데 cx 기준)
     const lx = align === 'left' ? cx - widest / 2 : align === 'right' ? cx + widest / 2 : cx;
+    if (FX.has(spec.style)) {
+      fx(ctx, lines, lx, lines.map((_, i) => cy - blockH / 2 + lineH * (i + 0.5)), px, color, spec.style);
+      ctx.restore(); return;
+    }
     if (spec.style === 'band') {
       ctx.fillStyle = dark ? 'rgba(255,255,255,.72)' : 'rgba(0,0,0,.55)';
       ctx.fillRect(0, cy - blockH / 2 - pad, w, blockH + pad * 2);
@@ -75,6 +79,37 @@
     for (let y = -R; y <= R; y += th, row++) for (let x = -R + (row % 2) * tw / 2; x <= R; x += tw) { ctx.strokeText(text, x, y); ctx.fillText(text, x, y); }
     ctx.restore();
   }
+  // 반짝이는 글씨 효과: 형광(네온관), 야광(빛 번짐), 형광펜(밑줄 칠). 꾸미기의 글씨 스티커도 같이 쓴다.
+  const FX = new Set(['neon', 'glow', 'marker']);
+  function mix(a, b, t) {
+    const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+    const x = p(a), y = p(b);
+    return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join('');
+  }
+  function fx(ctx, lines, x, ys, px, color, style) {
+    const each = f => lines.forEach((l, i) => f(l, x, ys[i]));
+    const fill = (l, x, y) => ctx.fillText(l, x, y);
+    ctx.lineJoin = 'round';
+    if (style === 'neon') {
+      ctx.shadowColor = color; ctx.strokeStyle = color; ctx.lineWidth = Math.max(2, px * .11);
+      for (const b of [px * .9, px * .45, px * .18]) { ctx.shadowBlur = b; each((l, x, y) => ctx.strokeText(l, x, y)); }
+      ctx.shadowBlur = px * .1; ctx.fillStyle = mix(color, '#ffffff', .78); each(fill);
+    } else if (style === 'glow') {
+      ctx.shadowColor = color; ctx.fillStyle = mix(color, '#ffffff', .5);
+      for (const b of [px * 1.5, px * .8, px * .35]) { ctx.shadowBlur = b; each(fill); }
+      ctx.shadowBlur = 0; ctx.fillStyle = mix(color, '#ffffff', .82); each(fill);
+    } else {
+      const a = ctx.textAlign, dark = ['#111111', '#1f3a8a'].includes(color);
+      ctx.save(); ctx.globalAlpha *= .62; ctx.fillStyle = color;
+      lines.forEach((l, i) => {
+        const w = ctx.measureText(l).width, x0 = a === 'left' ? x : a === 'right' ? x - w : x - w / 2;
+        ctx.beginPath(); ctx.moveTo(x0 - px * .18, ys[i] - px * .02); ctx.lineTo(x0 + w + px * .2, ys[i] - px * .08);
+        ctx.lineTo(x0 + w + px * .14, ys[i] + px * .5); ctx.lineTo(x0 - px * .14, ys[i] + px * .52); ctx.closePath(); ctx.fill();
+      });
+      ctx.restore();
+      ctx.fillStyle = dark ? '#ffffff' : '#111111'; each(fill);
+    }
+  }
   function clamp(v, lo, hi) { return hi < lo ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, v)); }
   function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
@@ -103,7 +138,7 @@
       <div class="text-stage"><canvas id="textCanvas" aria-label="글씨 미리보기"></canvas></div>
       <p class="text-hint" id="textHint">글씨를 끌어서 위치를 옮길 수 있어요.</p>
       <textarea id="textInput" rows="2" maxlength="120" placeholder="사진에 넣을 글씨"></textarea>
-      <div class="text-row wrap" role="group" aria-label="모양"><button type="button" data-tstyle="band">띠</button><button type="button" data-tstyle="shadow">그림자</button><button type="button" data-tstyle="box">상자</button><button type="button" data-tstyle="outline">외곽선</button><button type="button" data-tstyle="watermark">반복 워터마크</button></div>
+      <div class="text-row wrap" role="group" aria-label="모양"><button type="button" data-tstyle="band">띠</button><button type="button" data-tstyle="shadow">그림자</button><button type="button" data-tstyle="box">상자</button><button type="button" data-tstyle="outline">외곽선</button><button type="button" data-tstyle="neon">형광</button><button type="button" data-tstyle="glow">야광</button><button type="button" data-tstyle="marker">형광펜</button><button type="button" data-tstyle="watermark">반복 워터마크</button></div>
       <div class="text-row wrap wm-ideas" id="wmIdeas" hidden>${WATERMARK_IDEAS.map(t => `<button type="button" data-wm="${t}">${t}</button>`).join('')}<button type="button" data-wm="@date">오늘 날짜</button></div>
       <div class="text-row" role="group" aria-label="정렬" id="alignRow"><button type="button" data-talign="left">왼쪽</button><button type="button" data-talign="center">가운데</button><button type="button" data-talign="right">오른쪽</button></div>
       <div class="text-row colors" role="group" aria-label="글씨 색">${Object.entries(COLORS).map(([k, v]) => `<button type="button" data-tcolor="${k}" aria-label="${COLOR_NAMES[k]}" style="--sw:${v}"></button>`).join('')}</div>
@@ -248,5 +283,5 @@
     pending = false;
     if (newItems && newItems.length) open(newItems[0]);
   }
-  window.PhotoSokText = Object.freeze({ open, start, afterAdd, paint });
+  window.PhotoSokText = Object.freeze({ open, start, afterAdd, paint, fx, mix, COLORS, COLOR_NAMES });
 })();

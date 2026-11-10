@@ -286,7 +286,7 @@ async function processPdf() {
  if (state.busy || !state.items.length) return;
  let options;
  try { options = pdfOptions(); }
- catch (error) { toast(error.message, true); return; }
+ catch (error) { toast(errText(error), true); return; }
  const key = pdfSignature();
  if (pdfState.result && pdfState.key === key && !pdfState.error) {
   toast('이미 같은 조건으로 만든 PDF가 있어요. 바로 저장할 수 있어요.');
@@ -315,7 +315,7 @@ async function processPdf() {
  } catch (error) {
   if (error.name === 'AbortError') toast('작업을 중단했어요. 이전 PDF가 있다면 그대로 보관돼요.');
   else {
-   pdfState.error = error.message || 'PDF를 만들지 못했어요. 파일과 목표 용량을 확인해주세요.';
+   pdfState.error = errText(error, 'PDF를 만들지 못했어요. 파일과 목표 용량을 확인해주세요.');
    toast('PDF를 만들지 못했어요. 안내를 확인해주세요.', true);
   }
  } finally {

@@ -1,5 +1,5 @@
 'use strict';
-// 인스타 꾸미기: 필터 프리셋(강도 조절) + 인스타 비율(잘라 채우기 / 여백·흐린 배경) 을 한 화면에서.
+// 꾸미기: 필터 프리셋(강도 조절) + 비율(잘라 채우기 / 여백·흐린 배경) + 테두리 + 스티커(이모티콘·형광/야광 글씨)를 한 화면에서.
 // 원래 사진은 item.decoBase 에 남겨 다시 열면 처음부터 고친다. 글씨가 있으면 꾸민 사진 위에 다시 얹는다.
 (() => {
   const $ = id => document.getElementById(id);
@@ -69,7 +69,61 @@
     { id: '1.91:1', name: '가로 1.91:1', w: 1080, h: 566 },
   ];
   const FITS = [{ id: 'cover', name: '꽉 채우기' }, { id: 'white', name: '흰 여백' }, { id: 'black', name: '검정 여백' }, { id: 'blur', name: '흐린 배경' }];
-  const DEFAULT = { filter: 'none', strength: 100, ratio: 'orig', fit: 'cover', crop: { x: .5, y: .5, zoom: 1 }, adj: {}, frame: 'none' };
+  const DEFAULT = { filter: 'none', strength: 100, ratio: 'orig', fit: 'cover', crop: { x: .5, y: .5, zoom: 1 }, adj: {}, frame: 'none', stickers: [] };
+  // 스티커: 위치·크기는 결과 사진에 대한 비율이라 미리보기와 저장 결과가 같다. t:'emoji' 이모티콘, t:'text' 글씨(효과 fx).
+  const EMOJIS = ['😀', '😍', '🥰', '😎', '🤩', '😂', '🥹', '😘', '🥳', '🤗', '😴', '🤔', '❤️', '💕', '💖', '💛', '✨', '⭐', '🌟', '🔥', '💯', '👍', '👏', '🙏', '✌️', '🎉', '🎂', '🎁', '🎈', '🌸', '🌷', '🌈', '☀️', '🌙', '☁️', '❄️', '🍀', '🐶', '🐱', '🐰', '🐻', '🍰', '☕', '🍓', '📸', '💌', '👑', '🎀'];
+  const TEXT_FX = [{ id: 'plain', name: '기본' }, { id: 'neon', name: '형광' }, { id: 'glow', name: '야광' }, { id: 'marker', name: '형광펜' }, { id: 'outline', name: '외곽선' }, { id: 'bubble', name: '말풍선' }];
+  const EMOJI_FONT = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+  const TEXT_FONT = '"Pretendard", Pretendard, -apple-system, "Noto Sans KR", sans-serif';
+  function stickerFont(st, px) { return st.t === 'emoji' ? `${px}px ${EMOJI_FONT}` : `800 ${px}px ${TEXT_FONT}`; }
+  function stickerBox(ctx, st, w, h) {
+    const px = Math.max(6, st.s * Math.min(w, h));
+    if (st.t === 'emoji') return { hw: px * .62, hh: px * .62, px };
+    ctx.save(); ctx.font = stickerFont(st, px);
+    const lines = String(st.text || '').split('\n');
+    const widest = Math.max(...lines.map(l => ctx.measureText(l).width), px);
+    ctx.restore();
+    return { hw: widest / 2 + px * .45, hh: lines.length * px * 1.25 / 2 + px * .35, px, lines };
+  }
+  function drawStickers(ctx, w, h, list, sel = -1) {
+    (list || []).forEach((st, i) => {
+      const b = stickerBox(ctx, st, w, h), px = b.px;
+      ctx.save();
+      ctx.translate(st.x * w, st.y * h); ctx.rotate((st.r || 0) * Math.PI / 180);
+      ctx.font = stickerFont(st, px); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      if (st.t === 'emoji') ctx.fillText(st.e, 0, px * .04);
+      else {
+        const T = window.PhotoSokText, color = (T?.COLORS || {})[st.color] || '#ffffff';
+        const lh = px * 1.25, ys = b.lines.map((_, k) => -b.lines.length * lh / 2 + lh * (k + .5));
+        const dark = st.color === 'black' || st.color === 'navy';
+        if (st.fx === 'bubble') {
+          const bw = b.hw * 2, bh = b.hh * 2, r = Math.min(bh / 2, px * .6);
+          ctx.fillStyle = dark ? '#ffffff' : color; ctx.strokeStyle = '#111111'; ctx.lineWidth = Math.max(2, px * .07);
+          ctx.beginPath(); ctx.moveTo(-bw / 2 + r, -bh / 2); ctx.arcTo(bw / 2, -bh / 2, bw / 2, bh / 2, r); ctx.arcTo(bw / 2, bh / 2, -bw / 2, bh / 2, r);
+          ctx.lineTo(-bw * .12, bh / 2); ctx.lineTo(-bw * .26, bh / 2 + px * .55); ctx.lineTo(-bw * .3, bh / 2);
+          ctx.arcTo(-bw / 2, bh / 2, -bw / 2, -bh / 2, r); ctx.arcTo(-bw / 2, -bh / 2, bw / 2, -bh / 2, r); ctx.closePath(); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = dark ? color : '#111111'; b.lines.forEach((l, k) => ctx.fillText(l, 0, ys[k]));
+        } else if (st.fx === 'outline') {
+          ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(3, px * .22); ctx.strokeStyle = dark ? '#ffffff' : '#111111';
+          b.lines.forEach((l, k) => ctx.strokeText(l, 0, ys[k])); ctx.fillStyle = color; b.lines.forEach((l, k) => ctx.fillText(l, 0, ys[k]));
+        } else if (T && ['neon', 'glow', 'marker'].includes(st.fx)) T.fx(ctx, b.lines, 0, ys, px, color, st.fx);
+        else { ctx.shadowColor = dark ? 'rgba(255,255,255,.8)' : 'rgba(0,0,0,.55)'; ctx.shadowBlur = px * .25; ctx.fillStyle = color; b.lines.forEach((l, k) => ctx.fillText(l, 0, ys[k])); }
+      }
+      if (i === sel) {
+        ctx.shadowBlur = 0; ctx.setLineDash([6, 5]); ctx.lineWidth = 2; ctx.strokeStyle = '#c8f04a';
+        ctx.strokeRect(-b.hw, -b.hh, b.hw * 2, b.hh * 2);
+      }
+      ctx.restore();
+    });
+  }
+  function hitSticker(ctx, list, w, h, x, y) {
+    for (let i = (list || []).length - 1; i >= 0; i--) {
+      const st = list[i], b = stickerBox(ctx, st, w, h), a = -(st.r || 0) * Math.PI / 180;
+      const dx = x - st.x * w, dy = y - st.y * h, rx = dx * Math.cos(a) - dy * Math.sin(a), ry = dx * Math.sin(a) + dy * Math.cos(a);
+      if (Math.abs(rx) <= b.hw && Math.abs(ry) <= b.hh) return i;
+    }
+    return -1;
+  }
   let dialog, canvas, session = null, pending = false;
 
   function params(id, strength, adj = {}) {
@@ -134,7 +188,7 @@
   function compose(out, src, spec) {
     const id = spec.frame || 'none', w = out.width, h = out.height;
     const ins = frameInset(id, w, h);
-    if (!ins) { composeCore(out, src, spec); if (id === 'date') drawDate(out.getContext('2d'), w, h, spec); return; }
+    if (!ins) { composeCore(out, src, spec); if (id === 'date') drawDate(out.getContext('2d'), w, h, spec); drawStickers(out.getContext('2d'), w, h, spec.stickers, spec._sel); return; }
     const tmp = document.createElement('canvas'); tmp.width = Math.max(1, ins.w); tmp.height = Math.max(1, ins.h);
     composeCore(tmp, src, spec);
     const ctx = out.getContext('2d');
@@ -158,6 +212,7 @@
       ctx.fillText(stampDate().replace(/ /g, '.').replace("'", '20'), w - ins.x * 1.4, ins.y + ins.h + (h - ins.y - ins.h) / 2);
     }
     tmp.width = tmp.height = 1;
+    drawStickers(ctx, w, h, spec.stickers, spec._sel);
   }
   function drawDate(ctx, w, h) {
     const px = Math.round(Math.min(w, h) * .045);
@@ -213,10 +268,10 @@
     dialog = document.createElement('dialog');
     dialog.id = 'decoDialog';
     dialog.innerHTML = `
-      <div class="dialog-head"><h2>인스타 꾸미기</h2><button type="button" class="icon-button" id="decoClose" aria-label="꾸미기 닫기"><svg><use href="#i-close"/></svg></button></div>
+      <div class="dialog-head"><h2>꾸미기</h2><button type="button" class="icon-button" id="decoClose" aria-label="꾸미기 닫기"><svg><use href="#i-close"/></svg></button></div>
       <div class="text-stage"><canvas id="decoCanvas" aria-label="꾸미기 미리보기"></canvas></div>
       <p class="text-hint" id="decoHint"></p>
-      <div class="deco-tabs" role="tablist"><button type="button" role="tab" data-dtab="filter" class="on">필터</button><button type="button" role="tab" data-dtab="adjust">직접 조절</button></div>
+      <div class="deco-tabs" role="tablist"><button type="button" role="tab" data-dtab="filter" class="on">필터</button><button type="button" role="tab" data-dtab="adjust">직접 조절</button><button type="button" role="tab" data-dtab="sticker">스티커·글씨</button></div>
       <div id="decoFilterPane">
         <div class="deco-filters" id="decoFilters" role="group" aria-label="필터"></div>
         <label class="crop-zoom"><span>강도</span><input type="range" id="decoStrength" min="0" max="150" step="5" aria-label="필터 강도"><b id="decoStrengthValue"></b></label>
@@ -224,6 +279,19 @@
       <div id="decoAdjustPane" hidden>
         ${ADJ.map(a => `<label class="crop-zoom adj"><span>${a.name}</span><input type="range" data-adj="${a.k}" min="${a.min ?? -100}" max="100" step="1" aria-label="${a.name}"><b data-adjv="${a.k}">0</b></label>`).join('')}
         <div class="deco-adj-actions"><button type="button" class="small-button" id="decoAdjReset">조절 초기화</button><button type="button" class="small-button" id="decoSaveMy">내 필터로 저장</button><button type="button" class="small-button" id="decoDeleteMy" hidden>이 내 필터 지우기</button></div>
+      </div>
+      <div id="decoStickerPane" hidden>
+        <p class="deco-label">이모티콘</p>
+        <div class="deco-emojis" id="decoEmojis" role="group" aria-label="이모티콘">${EMOJIS.map(e => `<button type="button" data-emoji="${e}">${e}</button>`).join('')}</div>
+        <p class="deco-label">글씨</p>
+        <div class="deco-text-add"><input type="text" id="decoText" maxlength="40" placeholder="넣을 글씨" aria-label="넣을 글씨"><button type="button" class="small-button" id="decoTextAdd">글씨 붙이기</button></div>
+        <div class="text-row wrap" id="decoFx" role="group" aria-label="글씨 효과">${TEXT_FX.map(f => `<button type="button" data-fx="${f.id}">${f.name}</button>`).join('')}</div>
+        <div class="text-row colors" id="decoColors" role="group" aria-label="글씨 색"></div>
+        <div id="decoSelRow" hidden>
+          <label class="crop-zoom"><span>크기</span><input type="range" id="decoStSize" min="3" max="45" step="1" aria-label="스티커 크기"></label>
+          <label class="crop-zoom"><span>회전</span><input type="range" id="decoStRot" min="-180" max="180" step="1" aria-label="스티커 회전"></label>
+          <div class="deco-adj-actions"><button type="button" class="small-button" id="decoStDel">이 스티커 지우기</button><button type="button" class="small-button" id="decoStClear">스티커 모두 지우기</button></div>
+        </div>
       </div>
       <p class="deco-label">비율</p>
       <div class="text-row wrap" id="decoRatios" role="group" aria-label="인스타 비율">${RATIOS.map(r => `<button type="button" data-ratio="${r.id}">${r.name}</button>`).join('')}</div>
@@ -237,7 +305,39 @@
     canvas = $('decoCanvas');
     $('decoClose').onclick = () => dialog.close();
     dialog.addEventListener('close', () => { session = null; });
-    dialog.querySelectorAll('[data-dtab]').forEach(b => b.onclick = () => { const adj = b.dataset.dtab === 'adjust'; $('decoFilterPane').hidden = adj; $('decoAdjustPane').hidden = !adj; dialog.querySelectorAll('[data-dtab]').forEach(x => x.classList.toggle('on', x === b)); });
+    dialog.querySelectorAll('[data-dtab]').forEach(b => b.onclick = () => {
+      const t = b.dataset.dtab; tab = t;
+      $('decoFilterPane').hidden = t !== 'filter'; $('decoAdjustPane').hidden = t !== 'adjust'; $('decoStickerPane').hidden = t !== 'sticker';
+      dialog.querySelectorAll('[data-dtab]').forEach(x => x.classList.toggle('on', x === b));
+      if (t !== 'sticker') session.sel = -1;
+      sync(); schedule();
+    });
+    const T = window.PhotoSokText;
+    $('decoColors').innerHTML = Object.entries(T?.COLORS || { white: '#ffffff' }).map(([k, v]) => `<button type="button" data-scolor="${k}" aria-label="${(T?.COLOR_NAMES || {})[k] || k}" style="--sw:${v}"></button>`).join('');
+    const stickers = () => session.spec.stickers || (session.spec.stickers = []);
+    const selected = () => stickers()[session.sel];
+    // 새 글씨를 쓰는 중이면 효과·색은 새 글씨에 쓰고, 고른 스티커는 건드리지 않는다.
+    const composing = () => !!$('decoText').value.trim();
+    const add = st => {
+      if (stickers().length >= 20) { toast('스티커는 20개까지 붙일 수 있어요.', true); return; }
+      const n = stickers().length, off = (n % 5) * .05;
+      stickers().push({ x: .5 + off - .1, y: .45 + off - .1, r: 0, ...st }); session.sel = stickers().length - 1; sync(); schedule();
+    };
+    dialog.querySelectorAll('[data-emoji]').forEach(b => b.onclick = () => add({ t: 'emoji', e: b.dataset.emoji, s: .16 }));
+    $('decoTextAdd').onclick = () => {
+      const text = $('decoText').value.trim();
+      if (!text) { $('decoText').focus(); toast('넣을 글씨를 먼저 써주세요.', true); return; }
+      add({ t: 'text', text, fx: session.fx || 'neon', color: session.scolor || 'pink', s: .085 });
+      $('decoText').value = '';
+    };
+    $('decoText').oninput = () => sync();
+    $('decoText').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('decoTextAdd').click(); } };
+    dialog.querySelectorAll('[data-fx]').forEach(b => b.onclick = () => { session.fx = b.dataset.fx; const st = composing() ? null : selected(); if (st?.t === 'text') st.fx = b.dataset.fx; sync(); schedule(); });
+    $('decoColors').querySelectorAll('[data-scolor]').forEach(b => b.onclick = () => { session.scolor = b.dataset.scolor; const st = composing() ? null : selected(); if (st?.t === 'text') st.color = b.dataset.scolor; sync(); schedule(); });
+    $('decoStSize').oninput = () => { const st = selected(); if (st) { st.s = $('decoStSize').value / 100; schedule(); } };
+    $('decoStRot').oninput = () => { const st = selected(); if (st) { st.r = Number($('decoStRot').value); schedule(); } };
+    $('decoStDel').onclick = () => { if (session.sel >= 0) { stickers().splice(session.sel, 1); session.sel = -1; sync(); schedule(); } };
+    $('decoStClear').onclick = () => { session.spec.stickers = []; session.sel = -1; sync(); schedule(); };
     dialog.querySelectorAll('[data-adj]').forEach(r => r.oninput = () => { session.spec.adj[r.dataset.adj] = Number(r.value); sync(); schedule(); });
     $('decoAdjReset').onclick = () => { session.spec.adj = {}; sync(); schedule(); };
     $('decoSaveMy').onclick = () => {
@@ -264,9 +364,23 @@
     $('decoApply').onclick = () => finish('apply');
     $('decoSave').onclick = () => finish('save');
     $('decoAll').onclick = () => finish('all');
-    let last = null;
-    canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); last = { x: e.clientX, y: e.clientY }; });
+    let last = null, drag = -1;
+    canvas.addEventListener('pointerdown', e => {
+      canvas.setPointerCapture(e.pointerId); last = { x: e.clientX, y: e.clientY }; drag = -1;
+      if (!session) return;
+      const r = canvas.getBoundingClientRect(), k = canvas.width / r.width;
+      const hit = hitSticker(canvas.getContext('2d'), session.spec.stickers, canvas.width, canvas.height, (e.clientX - r.left) * k, (e.clientY - r.top) * k);
+      if (hit >= 0) {
+        drag = hit; session.sel = hit;
+        if (tab !== 'sticker') dialog.querySelector('[data-dtab="sticker"]').click(); else { sync(); schedule(); }
+      } else if (tab === 'sticker' && session.sel >= 0) { session.sel = -1; sync(); schedule(); }
+    });
     canvas.addEventListener('pointermove', e => {
+      if (last && session && drag >= 0) {
+        const r = canvas.getBoundingClientRect(), st = session.spec.stickers[drag];
+        if (st) { st.x = Math.min(1, Math.max(0, st.x + (e.clientX - last.x) / r.width)); st.y = Math.min(1, Math.max(0, st.y + (e.clientY - last.y) / r.height)); }
+        last = { x: e.clientX, y: e.clientY }; schedule(); return;
+      }
       if (!last || !session || !movable()) return;
       const ratio = canvas.width / canvas.getBoundingClientRect().width, s = session, c = s.spec.crop;
       const l = PhotoEngine.coverLayout(s.preview.width, s.preview.height, canvas.width, canvas.height, c);
@@ -274,14 +388,15 @@
       if (l.overflowY > 0) c.y = Math.min(1, Math.max(0, c.y - (e.clientY - last.y) * ratio / l.overflowY));
       last = { x: e.clientX, y: e.clientY }; schedule();
     });
-    const end = () => { last = null; };
+    const end = () => { last = null; drag = -1; };
     canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
   }
   const movable = () => session && session.spec.ratio !== 'orig' && session.spec.fit === 'cover';
   let raf = 0;
   function schedule() { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; draw(); }); }
   function resize() { const f = frameSize(session.spec, session.preview, 640); canvas.width = f.w; canvas.height = f.h; }
-  function draw() { if (session) compose(canvas, session.preview, session.spec); }
+  let tab = 'filter';
+  function draw() { if (session) compose(canvas, session.preview, { ...session.spec, _sel: tab === 'sticker' ? session.sel : -1 }); }
   function sync() {
     const s = session.spec;
     dialog.querySelectorAll('[data-filter]').forEach(b => { const on = b.dataset.filter === s.filter; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
@@ -294,7 +409,14 @@
     $('decoZoom').value = Math.round(s.crop.zoom * 100);
     dialog.querySelectorAll('[data-adj]').forEach(r => { const v = Number(s.adj?.[r.dataset.adj]) || 0; r.value = v; dialog.querySelector(`[data-adjv="${r.dataset.adj}"]`).textContent = v > 0 ? '+' + v : v; });
     $('decoDeleteMy').hidden = !String(s.filter).startsWith('my:');
-    $('decoHint').textContent = movable() ? '사진을 끌어서 보일 부분을 고를 수 있어요.' : s.ratio === 'orig' ? '인스타용 비율을 고르면 1080px 너비로 맞춰요.' : '사진 전체가 보이도록 여백을 넣어요.';
+    const st = (s.stickers || [])[session.sel];
+    $('decoSelRow').hidden = !st;
+    if (st) { $('decoStSize').value = Math.round(st.s * 100); $('decoStRot').value = st.r || 0; }
+    const useSel = st?.t === 'text' && !$('decoText').value.trim();
+    const fxNow = useSel ? st.fx : (session.fx || 'neon'), colNow = useSel ? st.color : (session.scolor || 'pink');
+    dialog.querySelectorAll('[data-fx]').forEach(b => { const on = b.dataset.fx === fxNow; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+    dialog.querySelectorAll('[data-scolor]').forEach(b => { const on = b.dataset.scolor === colNow; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+    $('decoHint').textContent = tab === 'sticker' ? ((s.stickers || []).length ? '스티커를 끌어서 옮기고, 눌러서 고른 뒤 크기·회전을 바꿔요.' : '이모티콘을 누르거나 글씨를 써서 붙여보세요.') : movable() ? '사진을 끌어서 보일 부분을 고를 수 있어요.' : s.ratio === 'orig' ? '인스타용 비율을 고르면 1080px 너비로 맞춰요.' : '사진 전체가 보이도록 여백을 넣어요.';
   }
   function thumbs() {
     const box = $('decoFilters'); box.replaceChildren();
@@ -325,8 +447,11 @@
       const preview = await oriented(base.file, base.rotation, 640);
       session = { item, base, date: new Date((item.originalFile || item.file).lastModified || Date.now()), preview, spec: JSON.parse(JSON.stringify({ ...DEFAULT, ...(item.decoSpec || {}) })) };
       if (!session.spec.adj) session.spec.adj = {};
+      if (!Array.isArray(session.spec.stickers)) session.spec.stickers = [];
+      session.sel = -1;
     } catch (e) { toast('사진을 열지 못했어요. 다시 시도해주세요.', true); return; }
-    resize(); thumbs(); sync(); draw();
+    resize(); thumbs();
+    dialog.querySelector('[data-dtab="filter"]').click();
     $('decoAll').hidden = state.items.filter(i => i.sourceType !== 'pdf').length < 2;
     dialog.showModal();
   }

@@ -526,7 +526,7 @@ footer { border-top: 0; }
 .crop-face { margin: 10px 0 0; padding: 9px 12px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); font-size: 12px; line-height: 1.6; text-align: center; }
 .crop-face.warn { background: rgba(240,160,74,.14); color: #f0a04a; }
 .crop-actions.three { grid-template-columns: auto auto 1fr; }
-.deco-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 14px 0 8px; padding: 4px; border-radius: 12px; background: var(--subtle); }
+.deco-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 14px 0 8px; padding: 4px; border-radius: 12px; background: var(--subtle); }
 .deco-tabs button { min-height: 38px; border: 0; border-radius: 9px; background: none; color: var(--muted); font-size: 13px; font-weight: 600; }
 .deco-tabs button.on { background: var(--panel); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
 .crop-zoom.adj { margin: 6px 0; }
@@ -765,3 +765,14 @@ body[data-screen="work"] .ad-free { display: none; }
 .sharp-split i { position: absolute; top: 50%; left: -15px; width: 28px; height: 28px; margin-top: -14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
 .sharp-tag { position: absolute; top: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; font-size: 12px; font-weight: 700; pointer-events: none; }
 .sharp-tag.l { left: 8px; } .sharp-tag.r { right: 8px; }
+
+/* v1.25 꾸미기 스티커 */
+.deco-emojis { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 4px; max-height: 150px; overflow-y: auto; padding: 2px; }
+.deco-emojis button { height: 44px; border: 0; border-radius: 10px; background: var(--subtle); font-size: 26px; line-height: 1; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+.deco-emojis button:active { transform: scale(.92); }
+.deco-text-add { display: flex; gap: 8px; margin-bottom: 8px; }
+.deco-text-add input { flex: 1; min-width: 0; height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; font-size: 16px; }
+#decoStickerPane .deco-label:first-child { margin-top: 4px; }
+/* 스티커를 고르는 동안에도 미리보기가 보이게 위에 붙여 둔다 */
+#decoDialog .text-stage { position: sticky; top: -1px; z-index: 3; box-shadow: 0 6px 12px -8px rgba(0,0,0,.35); }
+#decoDialog .text-stage canvas { max-height: 38vh; width: auto; max-width: 100%; touch-action: none; }

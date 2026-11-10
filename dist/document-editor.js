@@ -158,13 +158,13 @@
       if (previewShown) { resetPreview(); return; }
       busy(true); message('');
       try { const result = await makeResult(true); if (finished) return; if (previewURL) URL.revokeObjectURL(previewURL); previewURL = URL.createObjectURL(result.blob); q('.de-preview img').src = previewURL; q('.de-preview').hidden = false; imageWrap.hidden = true; previewShown = true; q('.de-preview-button').textContent = '모서리 다시 조절'; }
-      catch (error) { if (!finished && error.name !== 'AbortError') message(error.message || '미리보기를 만들지 못했어요.'); }
+      catch (error) { if (!finished && error.name !== 'AbortError') message(errText(error, '미리보기를 만들지 못했어요.')); }
       finally { if (!finished) busy(false); }
     };
     q('.de-apply').onclick = async () => {
       if (working) return; busy(true); message('');
       try { const result = await makeResult(false); if (!finished) finish(result); }
-      catch (error) { if (!finished && error.name !== 'AbortError') { message(error.message || '보정하지 못했어요. 다시 시도해주세요.'); busy(false); } }
+      catch (error) { if (!finished && error.name !== 'AbortError') { message(errText(error, '보정하지 못했어요. 다시 시도해주세요.')); busy(false); } }
     };
     busy(true); q('.de-progress p').textContent = '사진을 불러오는 중…';
     try {
@@ -188,7 +188,7 @@
       }
       busy(false); q('.de-reset').click();
     } catch (error) {
-      if (!finished) { message(error.message || '사진을 불러오지 못했어요.'); q('.de-progress').hidden = true; q('.de-apply').textContent = '적용하기'; }
+      if (!finished) { message(errText(error, '사진을 불러오지 못했어요.')); q('.de-progress').hidden = true; q('.de-apply').textContent = '적용하기'; }
     }
     return resultPromise;
   }

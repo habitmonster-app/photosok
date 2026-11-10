@@ -92,7 +92,7 @@
       const cm = (spec.w / 300 * 2.54).toFixed(1) + '×' + (spec.h / 300 * 2.54).toFixed(1) + 'cm';
       $('printSummary').textContent = cm + ' 사진 ' + r.n + '장 (' + r.cols + '×' + r.rows + ')' + (r.landscape ? ' · 가로로 배치' : '');
       $('printNote').textContent = SHEET.note + ', 화면 맞춤·테두리 없이 원본 크기로 인화하세요. ' + (GAP ? '연한 회색 선을 따라 자르면 돼요. ' : '') + '기기 설정에 따라 크기가 조금 달라질 수 있으니 처음 한 장으로 확인해주세요.';
-    } catch (e) { current = null; toast(e.message && e.message.length < 60 ? e.message : '인화용 사진을 만들지 못했어요.', true); }
+    } catch (e) { current = null; toast(errText(e, '인화용 사진을 만들지 못했어요.'), true); }
   }
 
   async function make() {
@@ -110,7 +110,7 @@
       if (!dialog) build();
       await refresh();
       dialog.showModal();
-    } catch (e) { toast(e.message && e.message.length < 60 ? e.message : '인화용 사진을 만들지 못했어요.', true); }
+    } catch (e) { toast(errText(e, '인화용 사진을 만들지 못했어요.'), true); }
     finally { btn.disabled = false; btn.textContent = label; }
   }
 

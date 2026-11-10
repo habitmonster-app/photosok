@@ -97,7 +97,7 @@ async function editItem(item){
   item.file=new File([edited.blob],itemTitle(item).replace(/\.[^.]+$/,'')+'_보정.png',{type:'image/png'});item.sourceType='photo';delete item.pageIndex;
   item.url=URL.createObjectURL(item.file);item.width=edited.width;item.height=edited.height;if(alreadyRotated)item.rotation=0;touchItem(item);
   toast(alreadyRotated?'보정한 PDF 페이지는 사진으로 바뀌어 글자 검색이 사라져요. 다시 처리하면 반영돼요.':'서류 보정을 적용했어요. 다시 처리하면 반영돼요.');
- }catch(e){if(e.name!=='AbortError')toast(e.message||'서류를 보정하지 못했어요.',true);}
+ }catch(e){if(e.name!=='AbortError')toast(errText(e,'서류를 보정하지 못했어요.'),true);}
  finally{state.busy=false;state.controller=null;render();}
 }
 function restoreItem(item){if(state.busy||!item.editBackup)return;URL.revokeObjectURL(item.url);Object.assign(item,item.editBackup);delete item.editBackup;delete item.masked;delete item.whiteBg;delete item.bgColor;delete item.sharpened;delete item.textBase;delete item.textSpec;delete item.decoBase;delete item.decoSpec;touchItem(item);render();toast('보정 전 페이지로 돌아왔어요.');}
@@ -106,7 +106,7 @@ async function addFiles(files){
  state.busy=true;state.importing=true;state.controller=new AbortController();const signal=state.controller.signal;$('progress').value=0;$('progressText').textContent='파일을 준비하고 있어요.';render();
  const list=Array.from(files);
  try{for(let at=0;at<list.length;at++){
-  if(signal.aborted)break;const file=list[at];
+  if(signal.aborted)break;let file=list[at];
   if(state.items.length>=20){skipped++;continue;}
   if(file.size>40000000){problems.push('40MB를 넘는 파일은 제외했어요.');continue;}
   if(!file.size){problems.push('빈 파일은 제외했어요.');continue;}
@@ -114,6 +114,7 @@ async function addFiles(files){
   if(existing+file.size>200000000){problems.push('선택한 원본 파일은 전체 200MB까지 넣을 수 있어요.');continue;}
   const pending=[];let pdfInput=false;
   try{
+   file=await keepFile(file);
    const head=new TextDecoder('latin1').decode(await file.slice(0,1024).arrayBuffer());
    pdfInput=file.type==='application/pdf'||/\.pdf$/i.test(file.name)||/%PDF-\d\.\d/.test(head);
    if(pdfInput){
@@ -133,7 +134,7 @@ async function addFiles(files){
    }
    if(signal.aborted)throw new DOMException('작업을 중단했어요.','AbortError');
    state.items.push(...pending);added+=pending.length;render();
-  }catch(e){for(const p of pending)disposeItem(p);if(pdfInput)await PDFTools.release(file);if(e.name==='AbortError')break;problems.push(file.name+': '+(e.message||'파일을 열지 못했어요.'));}
+  }catch(e){for(const p of pending)disposeItem(p);if(pdfInput)await PDFTools.release(file);if(e.name==='AbortError')break;problems.push(file.name+': '+errText(e,'파일을 열지 못했어요.'));}
   $('progress').value=(at+1)/list.length*100;
  }}finally{const cancelled=signal.aborted;state.busy=false;state.importing=false;state.controller=null;render();if(skipped)problems.push('전체 20페이지까지 선택할 수 있어요.');if(problems.length)toast([...new Set(problems)].join(' '),true);else if(cancelled)toast('불러오기를 중단했어요. 추가된 페이지는 그대로예요.');else if(added)toast(added+'페이지를 추가했어요.');window.PhotoSokText?.afterAdd(state.items.slice(startLen));window.PhotoSokDeco?.afterAdd(state.items.slice(startLen));window.PhotoSokMask?.afterAdd(state.items.slice(startLen));window.PhotoSokSharpen?.afterAdd(state.items.slice(startLen));if(state.spec&&added)window.PhotoSokID?.fitAll(state.items.slice(startLen));}
 }
@@ -151,12 +152,12 @@ $('customToggle').onclick=()=>{state.custom=!state.custom;if(state.custom)state.
 $('customSize').oninput=invalidate;$('customEdge').oninput=invalidate;$('format').onchange=invalidate;$('maxEdge').onchange=()=>{$('customEdgeWrap').hidden=$('maxEdge').value!=='custom';invalidate();};
 function options(){if(state.mode==='compress'&&state.quality)return {mode:'resize',maxEdge:8192,quality:state.quality,stripMetadata:true,format:'image/jpeg'};const o={mode:state.mode,targetBytes:state.target,format:$('format').value,maxEdge:Number($('maxEdge').value),quality:.9,stripMetadata:$('stripMetadata').checked};if(state.mode==='compress'&&$('exactSize').checked){const w=Number($('exactWidth').value),h=Number($('exactHeight').value);if(!Number.isInteger(w)||!Number.isInteger(h)||w<100||h<100||w>4000||h>4000)throw new Error('가로·세로는 100 ~ 4,000px 정수로 입력해주세요.');o.exactWidth=w;o.exactHeight=h;o.fit=$('fitCover').checked?'cover':'pad';}if(state.mode==='compress'&&state.custom){const v=Number($('customSize').value);if(!Number.isFinite(v)||v<10||v>40000)throw new Error('목표 용량은 10 ~ 40,000KB로 입력해주세요.');o.targetBytes=Math.floor(v*1000);}if(state.mode==='resize'&&$('maxEdge').value==='custom'){const v=Number($('customEdge').value);if(!Number.isFinite(v)||v<100||v>8000)throw new Error('긴 쪽 길이는 100 ~ 8,000px로 입력해주세요.');o.maxEdge=Math.round(v);}return o;}
 $('process').onclick=async()=>{
- if(state.busy||!state.items.length)return;let opts;try{opts=options();}catch(e){toast(e.message,true);return;}
+ if(state.busy||!state.items.length)return;let opts;try{opts=options();}catch(e){toast(errText(e),true);return;}
  if(state.items.every(i=>i.result&&i.signature===itemSignature(opts,i)&&!i.error)){toast('이미 같은 설정으로 완료됐어요. 바로 저장할 수 있어요.');return;}state.busy=true;state.controller=new AbortController();$('progress').value=0;render();let successes=0;
  for(let n=0;n<state.items.length;n++){
   if(state.controller.signal.aborted)break;const item=state.items[n],key=itemSignature(opts,item);if(item.result&&item.signature===key&&!item.error){item.stale=false;successes++;$('progress').value=(n+1)/state.items.length*100;continue;}item.processing=true;item.error=null;render();
   try{const input=await itemInputFile(item,{signal:state.controller.signal});const result=await PhotoEngine.transform(input,{...opts,crop:opts.fit==='cover'?item.crop:undefined,rotation:item.sourceType==='pdf'?0:(item.rotation||0),signal:state.controller.signal,onProgress:p=>{$('progress').value=(n+p)/state.items.length*100;$('progressText').textContent=(n+1)+' / '+state.items.length+'장 처리 중';}});if(item.convertInfo?.converted||item.sourceType==='pdf'||item.editBackup){result.unchanged=false;result.metadataRemoved=true;}if(item.outURL)URL.revokeObjectURL(item.outURL);item.result=result;item.outURL=URL.createObjectURL(result.blob);item.stale=false;item.signature=key;successes++;}
-  catch(e){if(e.name!=='AbortError'){item.error=e.message||'사진을 처리하지 못했어요. 다른 사진으로 다시 시도해주세요.';if(item.result)item.stale=true;}}
+  catch(e){if(e.name!=='AbortError'){item.error=errText(e,'사진을 처리하지 못했어요. 다른 사진으로 다시 시도해주세요.');if(item.result)item.stale=true;}}
   finally{item.processing=false;render();}
  }
  const cancelled=state.controller.signal.aborted;state.busy=false;state.controller=null;render();if(successes&&window.PhotoSokScreen?.get()==='work')$('queueSection').scrollIntoView({behavior:'smooth',block:'start'});toast(cancelled?'중단했어요. 완료된 사진은 저장할 수 있어요.':successes+'장 처리 완료. 비교 후 저장해주세요.',!successes&&!cancelled);

@@ -113,7 +113,7 @@
       }
       sync(); draw();
       toast(faces.length + '명의 얼굴을 가렸어요. 빠진 얼굴은 직접 그려주세요.');
-    } catch (e) { toast(e.message && e.message.length < 60 ? e.message : '얼굴을 찾지 못했어요.', true); }
+    } catch (e) { toast(errText(e, '얼굴을 찾지 못했어요.'), true); }
     finally { btn.disabled = false; btn.textContent = '얼굴 찾아 가리기'; }
   }
 

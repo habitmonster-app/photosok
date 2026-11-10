@@ -28,7 +28,7 @@
         if (session !== s) return;
         const r = PhotoSokID.compute(face, s.w, s.h, PhotoSokID.currentHead());
         Object.assign(s.crop, r.crop); zoomInput.value = Math.round(s.crop.zoom * 100); s.auto = true; draw();
-      } catch (e) { $('cropFace').textContent = e.message || '얼굴 인식을 쓸 수 없어요.'; }
+      } catch (e) { $('cropFace').textContent = errText(e, '얼굴 인식을 쓸 수 없어요.'); }
       finally { $('cropFaceFit').disabled = false; }
     };
     zoomInput.oninput = () => { if (!session) return; session.auto = false; session.crop.zoom = zoomInput.value / 100; draw(); };

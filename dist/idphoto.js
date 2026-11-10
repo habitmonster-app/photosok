@@ -70,7 +70,7 @@
         const r = compute(face, fr.w, fr.h, currentHead());
         item.crop = r.crop; item.cropAuto = true; item.faceNote = r.note; item.faceOk = r.ok;
         touchItem(item); if (face.faces.length) fitted++; else failed++;
-      } catch (e) { failed++; item.faceNote = e.message || '얼굴 인식을 쓸 수 없어요.'; }
+      } catch (e) { failed++; item.faceNote = errText(e, '얼굴 인식을 쓸 수 없어요.'); }
     }
     render();
     $('specFaceStatus').textContent = fitted ? fitted + '장을 얼굴 기준으로 맞췄어요.' + (failed ? ' ' + failed + '장은 얼굴을 못 찾았어요.' : '') + ' 사진마다 결과를 확인해주세요.' : '얼굴을 찾지 못했어요. 손으로 맞춰주세요.';
@@ -130,7 +130,7 @@
       delete item.textBase; delete item.textSpec; delete item.decoBase; delete item.decoSpec;
       touchItem(item);
       toast('배경을 ' + bg.name + '으로 바꿨어요. 머리카락 가장자리를 비교 화면에서 확인해주세요.');
-    } catch (e) { toast(e.message && e.message.length < 60 ? e.message : '배경을 바꾸지 못했어요.', true); }
+    } catch (e) { toast(errText(e, '배경을 바꾸지 못했어요.'), true); }
     finally { state.busy = false; render(); }
   }
 
