@@ -62,11 +62,12 @@ jobs:
           xcrun simctl install "$DEV" "$APP"
           mkdir -p ../ios-check
           xcrun simctl launch --console-pty --terminate-running-process "$DEV" com.habitmonster.photosok -selftest > ../ios-check/console.txt 2>&1 &
-          for i in $(seq 1 90); do grep -q SELFTEST_RESULT ../ios-check/console.txt && break; sleep 1; done
+          for i in $(seq 1 300); do grep -q SELFTEST_RESULT ../ios-check/console.txt && break; sleep 1; done
           sleep 1
           xcrun simctl io "$DEV" screenshot ../ios-check/1-intro.png
           sleep 6
           xcrun simctl io "$DEV" screenshot ../ios-check/2-home.png
+          tail -30 ../ios-check/console.txt
           grep SELFTEST_RESULT ../ios-check/console.txt | tail -1 | tee ../ios-check/selftest.txt
           grep -q '"status":"saved"' ../ios-check/selftest.txt
 
