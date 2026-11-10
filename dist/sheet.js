@@ -14,7 +14,7 @@
     // 목록 버튼을 누르면 시트를 먼저 닫고, 그다음 원래 버튼 동작(다른 창 열기)이 이어진다.
     sheet.querySelector('#sheetList').addEventListener('click', e => { if (e.target.closest('button')) sheet.close(); }, true);
   }
-  const ICONS = { '꾸미기': 'i-sparkle', '꾸미기 고치기': 'i-sparkle', '글씨 넣기': 'i-text', '글씨 고치기': 'i-text', '가리기': 'i-mask', '더 가리기': 'i-mask', '서류 보정': 'i-pdf', '선명하게': 'i-focus', '스티커 만들기': 'i-sticker', '배경색': 'i-idcard', '배경색 다시': 'i-idcard', '보정 전으로': 'i-convert' };
+  const ICONS = { '꾸미기': 'i-sparkle', '꾸미기 고치기': 'i-sparkle', '글씨 넣기': 'i-text', '글씨 고치기': 'i-text', '가리기': 'i-mask', '더 가리기': 'i-mask', '서류 보정': 'i-pdf', '선명하게': 'i-focus', '스티커 만들기': 'i-sticker', '잡티·부분 보정': 'i-brush', '배경색': 'i-idcard', '배경색 다시': 'i-idcard', '보정 전으로': 'i-convert' };
   function open(title, buttons) {
     if (!sheet) build();
     sheet.querySelector('#sheetTitle').textContent = title;
