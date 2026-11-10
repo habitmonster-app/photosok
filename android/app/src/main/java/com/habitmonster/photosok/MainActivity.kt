@@ -52,6 +52,7 @@ import android.provider.OpenableColumns
 import android.util.Base64
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
+import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -82,6 +83,7 @@ class MainActivity : Activity() {
         const val MAX_SHARED = 20
         const val TRASH = 43
         const val PERM = 44
+        const val CAM_PERM = 45
     }
 
     private lateinit var web: WebView
@@ -125,6 +127,7 @@ class MainActivity : Activity() {
             allowContentAccess = true
             setSupportMultipleWindows(false)
             textZoom = 100
+            mediaPlaybackRequiresUserGesture = false
         }
         web.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
@@ -144,6 +147,14 @@ class MainActivity : Activity() {
                 chooserCallback?.onReceiveValue(null)
                 chooserCallback = callback
                 return if (params.isCaptureEnabled) openCamera() else openPicker(params)
+            }
+            // 얼굴 가이드 촬영 화면(웹 카메라). 카메라 권한이 있으면 허용, 없으면 한 번 묻는다.
+            override fun onPermissionRequest(request: PermissionRequest) {
+                runOnUiThread {
+                    if (!request.resources.contains(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) { request.deny(); return@runOnUiThread }
+                    if (hasCamera()) request.grant(arrayOf(PermissionRequest.RESOURCE_VIDEO_CAPTURE))
+                    else { pendingWebCam?.deny(); pendingWebCam = request; requestPermissions(arrayOf(Manifest.permission.CAMERA), CAM_PERM) }
+                }
             }
         }
         web.addJavascriptInterface(Bridge(), "PhotoSokNative")
@@ -254,7 +265,17 @@ class MainActivity : Activity() {
         else -> false
     }
 
+    private var pendingWebCam: PermissionRequest? = null
+    private var pendingIntentCam = false
+    private fun hasCamera() = checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+
     private fun openCamera(): Boolean {
+        // 카메라 권한을 선언한 앱은 기본 카메라 앱을 부를 때도 권한이 있어야 한다.
+        if (!hasCamera()) { pendingIntentCam = true; requestPermissions(arrayOf(Manifest.permission.CAMERA), CAM_PERM); return true }
+        return launchCamera()
+    }
+
+    private fun launchCamera(): Boolean {
         val dir = File(cacheDir, "camera").apply { mkdirs() }
         val file = File(dir, "사진쏙_촬영_${System.currentTimeMillis()}.jpg")
         val uri = FileProvider.getUriForFile(this, "$packageName.files", file)
@@ -390,6 +411,13 @@ class MainActivity : Activity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == CAM_PERM) {
+            val ok = hasCamera()
+            pendingWebCam?.let { if (ok) it.grant(arrayOf(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) else it.deny() }
+            pendingWebCam = null
+            if (pendingIntentCam) { pendingIntentCam = false; if (ok) launchCamera() else cancelChooser() }
+            return
+        }
         if (requestCode != PERM) return
         val status = mediaStatus()
         // 거절했고 다시 물을 수도 없으면 설정 화면으로 안내한다.
@@ -593,7 +621,7 @@ class MainActivity : Activity() {
             background = GradientDrawable().apply { setColor(bg); setCornerRadii(floatArrayOf(dp(24).toFloat(), dp(24).toFloat(), dp(24).toFloat(), dp(24).toFloat(), 0f, 0f, 0f, 0f)) }
         }
         box.addView(TextView(this).apply { text = "저장했어요"; setTextColor(fg); textSize = 20f; setTypeface(typeface, Typeface.BOLD) })
-        if (where.isNotBlank()) box.addView(TextView(this).apply { text = "$where 에서 확인하세요."; setTextColor(muted); textSize = 14f; setPadding(0, dp(4), 0, dp(14)) })
+        if (where.isNotBlank()) box.addView(TextView(this).apply { text = "${where}에서 확인하세요."; setTextColor(muted); textSize = 14f; setPadding(0, dp(4), 0, dp(14)) })
 
         // 네이티브 광고: 아이콘·제목·설명·이미지·버튼, 그리고 "광고" 표시
         val adView = NativeAdView(this)

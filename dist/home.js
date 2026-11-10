@@ -88,6 +88,7 @@
   directTool('decoTile', () => window.PhotoSokDeco?.start());
   directTool('textTile', () => window.PhotoSokText?.start());
   directTool('maskTile', () => window.PhotoSokMask?.start());
+  directTool('sharpTile', () => window.PhotoSokSharpen?.start());
   $('cleanTile')?.addEventListener('click', () => window.PhotoSokCleanup?.open());
   $('specTile')?.addEventListener('click', () => {
     $('workflowPhoto').click();

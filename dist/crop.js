@@ -11,7 +11,7 @@
     dialog.innerHTML = `
       <div class="dialog-head"><h2>자르기 조절</h2><button type="button" class="icon-button" id="cropClose" aria-label="자르기 조절 닫기"><svg><use href="#i-close"/></svg></button></div>
       <p class="crop-hint" id="cropHint">사진을 끌어서 위치를 옮기고, 두 손가락이나 아래 막대로 확대해요.</p>
-      <div class="crop-stage"><canvas id="cropCanvas" aria-label="자를 영역 미리보기"></canvas></div>
+      <div class="crop-stage"><div class="crop-frame"><span class="cr-w" id="crW" hidden></span><canvas id="cropCanvas" aria-label="자를 영역 미리보기"></canvas><span class="cr-h" id="crH" hidden></span></div></div>
       <p class="crop-size" id="cropSize"></p>
       <label class="crop-zoom"><span>확대</span><input type="range" id="cropZoom" min="100" max="400" value="100" step="1" aria-label="확대"></label>
       <p class="crop-face" id="cropFace" hidden></p><div class="crop-actions three"><button type="button" class="small-button" id="cropFaceFit">얼굴에 맞추기</button><button type="button" class="small-button" id="cropReset">가운데로</button><button type="button" class="primary" id="cropApply">이대로 자르기</button></div>`;
@@ -82,6 +82,14 @@
     ctx.setLineDash([w / 60, w / 60]);
     for (const f of [1 / 3, 2 / 3]) { line(w * f, 0, w * f, h); line(0, h * f, w, h * f); }
     ctx.strokeStyle = 'rgba(200,240,74,.95)'; ctx.lineWidth = Math.max(2, w / 160); ctx.setLineDash([]); line(w / 2, 0, w / 2, h);
+    // 규격일 때: 정수리·턱이 올 자리 (얼굴에 맞추기 기준)
+    if (session.spec) {
+      const hd = PhotoSokID.currentHead(), y1 = hd.top * h, y2 = (hd.top + hd.ratio) * h;
+      ctx.strokeStyle = 'rgba(80,170,255,.9)'; ctx.lineWidth = Math.max(1.5, w / 220); ctx.setLineDash([w / 40, w / 60]);
+      line(w * .22, y1, w * .78, y1); line(w * .3, y2, w * .7, y2);
+      ctx.setLineDash([]); ctx.fillStyle = 'rgba(80,170,255,.95)'; ctx.font = `600 ${Math.round(w / 26)}px sans-serif`;
+      ctx.fillText('정수리', w * .79, y1 + w / 80); ctx.fillText('턱', w * .71, y2 + w / 80);
+    }
     ctx.restore();
     if (session.face) { const r = PhotoSokID.check(session.face, session.w, session.h, PhotoSokID.currentHead(), session.crop); $('cropFace').hidden = false; $('cropFace').textContent = r.note; $('cropFace').classList.toggle('warn', !r.ok); }
     const moveX = l.overflowX > 1, moveY = l.overflowY > 1;
@@ -118,7 +126,11 @@
     canvas.height = Math.max(1, Math.round(height * ps));
     session = { item, source, rotation, w: width, h: height, auto: !!item.cropAuto, face: null, ow: quarter ? source.height : source.width, oh: quarter ? source.width : source.height, crop: { x: 0.5, y: 0.5, zoom: 1, ...(item.crop || {}) } };
     zoomInput.value = Math.round(session.crop.zoom * 100);
-    $('cropSize').textContent = '저장 크기 ' + width + ' × ' + height + 'px · 초록 선이 가운데예요';
+    const spec = SPECS[state.spec]; session.spec = spec && spec.w === width && spec.h === height ? spec : null;
+    const mm = v => Math.round(v / 300 * 25.4);
+    $('crW').hidden = $('crH').hidden = !session.spec;
+    if (session.spec) { $('crW').textContent = mm(width) + 'mm · ' + width + 'px'; $('crH').textContent = mm(height) + 'mm · ' + height + 'px'; }
+    $('cropSize').textContent = session.spec ? '초록 선이 가운데, 파란 점선이 정수리·턱 자리예요' : '저장 크기 ' + width + ' × ' + height + 'px · 초록 선이 가운데예요';
     $('cropFace').hidden = true; $('cropFace').classList.remove('warn');
     draw();
     dialog.showModal();

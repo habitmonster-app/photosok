@@ -29,7 +29,7 @@ android {
         targetSdk = 34
         // CI 빌드 번호를 버전으로: 덮어 설치 가능
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "1.22." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
+        versionName = "1.23." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
         manifestPlaceholders["admobAppId"] = admobAppId
         buildConfigField("String", "ADMOB_BANNER", "\"$admobBannerId\"")
         buildConfigField("String", "ADMOB_NATIVE", "\"$admobNativeId\"")

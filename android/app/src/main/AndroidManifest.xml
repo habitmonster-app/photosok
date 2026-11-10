@@ -7,6 +7,9 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- 증명사진 찍기(얼굴 가이드 화면)에서만 묻는다. 찍은 사진은 기기 안에서만 쓴다. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <application
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
