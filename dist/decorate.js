@@ -65,6 +65,31 @@
     { k: 'sharp', name: '선명도', scale: 1, min: 0 }, { k: 'vig', name: '비네트', scale: .7 }, { k: 'grain', name: '입자', scale: 1, min: 0 },
     { k: 'clarity', name: '명료도', scale: 1 }, { k: 'bloom', name: '글로우', scale: .8, min: 0 },
   ];
+  // 조절 아이콘 (선 그림, 24×24)
+  const SV = d => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+  const ADJ_ICON = {
+    exp: SV('<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>'),
+    con: SV('<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/>'),
+    sat: SV('<path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11Z"/>'),
+    warm: SV('<path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0Z"/><path d="M12 10v6"/>'),
+    tint: SV('<circle cx="9" cy="10" r="5"/><circle cx="15" cy="10" r="5"/><circle cx="12" cy="15" r="5"/>'),
+    fade: SV('<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 9h16M4 14h16" stroke-dasharray="2 2"/>'),
+    sharp: SV('<path d="M12 4 20 19H4Z"/>'),
+    vig: SV('<rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="12" cy="12" r="4"/>'),
+    grain: SV('<circle cx="7" cy="7" r="1"/><circle cx="12" cy="9" r="1"/><circle cx="17" cy="6" r="1"/><circle cx="8" cy="13" r="1"/><circle cx="15" cy="14" r="1"/><circle cx="11" cy="18" r="1"/><circle cx="18" cy="18" r="1"/>'),
+    clarity: SV('<path d="M12 3 21 12 12 21 3 12Z"/><path d="M12 8v8M8 12h8"/>'),
+    bloom: SV('<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6.5" stroke-dasharray="2 3"/><circle cx="12" cy="12" r="9.5" stroke-dasharray="1 4"/>'),
+    curve: SV('<path d="M4 20C10 20 9 4 20 4"/><path d="M4 4v16h16" opacity=".4"/>'),
+    wb: SV('<path d="M4 18 18 4M14 4h4v4"/><path d="M5 5h4M7 3v4M15 17h4"/>'),
+  };
+  const TOOLS = [
+    { id: 'filter', name: '필터', icon: '<circle cx="9" cy="10" r="5.5"/><circle cx="15" cy="10" r="5.5"/><circle cx="12" cy="15" r="5.5"/>' },
+    { id: 'adjust', name: '조절', icon: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>' },
+    { id: 'effect', name: '효과', icon: '<path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4Z"/><path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8Z"/>' },
+    { id: 'sticker', name: '스티커', icon: '<path d="M5 4h14v9l-6 7H5Z"/><path d="M13 20v-5a2 2 0 0 1 2-2h4"/><circle cx="9.5" cy="9.5" r=".8"/><circle cx="14.5" cy="9.5" r=".8"/>' },
+    { id: 'text', name: '글씨', icon: '<path d="M5 7V5h14v2M12 5v14M9 19h6"/>' },
+    { id: 'frame', name: '비율', icon: '<rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 3v3M16 18v3M3 10h1M20 14h1"/>' },
+  ];
   const MY_KEY = 'photosok-my-filters';
   function myFilters() { try { const a = JSON.parse(localStorage.getItem(MY_KEY) || '[]'); return Array.isArray(a) ? a.slice(0, 30) : []; } catch { return []; } }
   function saveMy(list) { try { localStorage.setItem(MY_KEY, JSON.stringify(list)); return true; } catch { return false; } }
@@ -130,9 +155,9 @@
       if (st.t === 'emoji') ctx.fillText(st.e, 0, px * .04);
       else if (st.t === 'img' || st.t === 'art') { if (b.im) ctx.drawImage(b.im, -b.hw, -b.hh, b.hw * 2, b.hh * 2); }
       else {
-        const T = window.PhotoSokText, color = (T?.COLORS || {})[st.color] || '#ffffff';
+        const color = colorHex(st.color);
         const lh = px * 1.25, ys = b.lines.map((_, k) => -b.lines.length * lh / 2 + lh * (k + .5));
-        const dark = st.color === 'black' || st.color === 'navy';
+        const dark = hexHsl(color)[2] < 35;
         if (st.fx === 'bubble') {
           const bw = b.hw * 2, bh = b.hh * 2, r = Math.min(bh / 2, px * .6);
           ctx.fillStyle = dark ? '#ffffff' : color; ctx.strokeStyle = '#111111'; ctx.lineWidth = Math.max(2, px * .07);
@@ -439,20 +464,23 @@
     dialog = document.createElement('dialog');
     dialog.id = 'decoDialog';
     dialog.innerHTML = `
-      <div class="dialog-head"><h2>꾸미기</h2><button type="button" class="icon-button" id="decoClose" aria-label="꾸미기 닫기"><svg><use href="#i-close"/></svg></button></div>
+      <div class="deco-top"><button type="button" class="deco-x" id="decoClose" aria-label="꾸미기 닫기"><svg><use href="#i-close"/></svg></button><h2 id="decoToolName">필터</h2><button type="button" class="deco-done" id="decoApply">완료</button></div>
       <div class="text-stage"><canvas id="decoCanvas" aria-label="꾸미기 미리보기"></canvas></div>
       <p class="text-hint" id="decoHint"></p>
-      <div class="deco-tabs" role="tablist"><button type="button" role="tab" data-dtab="filter" class="on">필터</button><button type="button" role="tab" data-dtab="adjust">조절</button><button type="button" role="tab" data-dtab="effect">효과</button><button type="button" role="tab" data-dtab="sticker">스티커</button></div>
+      <div class="deco-panel">
       <div id="decoFilterPane">
         <div class="deco-filters" id="decoFilters" role="group" aria-label="필터"></div>
         <label class="crop-zoom"><span>강도</span><input type="range" id="decoStrength" min="0" max="150" step="5" aria-label="필터 강도"><b id="decoStrengthValue"></b></label>
+        <div class="deco-adj-actions"><button type="button" class="small-button" id="decoDeleteMy" hidden>이 내 필터 지우기</button></div>
       </div>
       <div id="decoAdjustPane" hidden>
-        ${ADJ.map(a => `<label class="crop-zoom adj"><span>${a.name}</span><input type="range" data-adj="${a.k}" min="${a.min ?? -100}" max="100" step="1" aria-label="${a.name}"><b data-adjv="${a.k}">0</b></label>`).join('')}
-        <p class="deco-label">커브 <small>점을 위아래로 끌어 밝기를 바꿔요</small></p>
-        <canvas class="deco-curve" id="decoCurve" width="520" height="300" aria-label="커브"></canvas>
-        <div class="deco-adj-actions"><button type="button" class="small-button" id="decoAutoWb">화이트 밸런스 자동</button><button type="button" class="small-button" id="decoCurveS">대비 곡선(S)</button><button type="button" class="small-button" id="decoCurveReset">커브 초기화</button></div>
-        <div class="deco-adj-actions"><button type="button" class="small-button" id="decoAdjReset">조절 초기화</button><button type="button" class="small-button" id="decoSaveMy">내 필터로 저장</button><button type="button" class="small-button" id="decoDeleteMy" hidden>이 내 필터 지우기</button></div>
+        <div class="deco-dials" id="decoAdjPick" role="group" aria-label="조절 항목">${ADJ.map(a => `<button type="button" data-adjpick="${a.k}"><i>${ADJ_ICON[a.k] || ''}</i><span>${a.name}</span></button>`).join('')}<button type="button" data-adjpick="curve"><i>${ADJ_ICON.curve}</i><span>커브</span></button><button type="button" data-adjpick="wb" id="decoAutoWb"><i>${ADJ_ICON.wb}</i><span>자동 색</span></button></div>
+        ${ADJ.map(a => `<label class="crop-zoom adj" data-adjrow="${a.k}" hidden><span>${a.name}</span><input type="range" data-adj="${a.k}" min="${a.min ?? -100}" max="100" step="1" aria-label="${a.name}"><b data-adjv="${a.k}">0</b></label>`).join('')}
+        <div id="decoCurveBox" hidden>
+          <canvas class="deco-curve" id="decoCurve" width="520" height="300" aria-label="커브"></canvas>
+          <div class="deco-adj-actions"><button type="button" class="small-button" id="decoCurveS">대비 곡선(S)</button><button type="button" class="small-button" id="decoCurveReset">커브 초기화</button></div>
+        </div>
+        <div class="deco-adj-actions"><button type="button" class="small-button" id="decoAdjReset">조절 초기화</button><button type="button" class="small-button" id="decoSaveMy">내 필터로 저장</button></div>
       </div>
       <div id="decoEffectPane" hidden>
         <p class="deco-label">인물 배경 흐리게</p>
@@ -467,38 +495,46 @@
         </div>
       </div>
       <div id="decoStickerPane" hidden>
-        <p class="deco-label">스티커 모음</p>
         <div class="deco-packs" id="decoPacks" role="tablist" aria-label="스티커 모음">${ART.map(p => `<button type="button" data-pack="${p.id}">${p.name}</button>`).join('')}<button type="button" data-pack="mine">내 스티커</button><button type="button" data-pack="emoji">이모지</button><button type="button" data-pack="label">글씨 라벨</button></div>
         <div class="deco-emojis" id="decoEmojis" role="group" aria-label="스티커"></div>
         <div class="deco-adj-actions"><button type="button" class="small-button" id="decoFaceStick">고른 스티커를 얼굴에 붙이기</button></div>
-        <p class="deco-label">글씨</p>
-        <div class="deco-text-add"><input type="text" id="decoText" maxlength="40" placeholder="넣을 글씨" aria-label="넣을 글씨"><button type="button" class="small-button" id="decoTextAdd">글씨 붙이기</button></div>
-        <div class="text-row wrap" id="decoFx" role="group" aria-label="글씨 효과">${TEXT_FX.map(f => `<button type="button" data-fx="${f.id}">${f.name}</button>`).join('')}</div>
-        <div class="text-row colors" id="decoColors" role="group" aria-label="글씨 색"></div>
-        <div id="decoSelRow" hidden>
-          <label class="crop-zoom"><span>크기</span><input type="range" id="decoStSize" min="3" max="45" step="1" aria-label="스티커 크기"></label>
-          <label class="crop-zoom"><span>회전</span><input type="range" id="decoStRot" min="-180" max="180" step="1" aria-label="스티커 회전"></label>
-          <div class="deco-adj-actions"><button type="button" class="small-button" id="decoStDel">이 스티커 지우기</button><button type="button" class="small-button" id="decoStClear">스티커 모두 지우기</button></div>
-        </div>
       </div>
-      <p class="deco-label">비율</p>
-      <div class="text-row wrap" id="decoRatios" role="group" aria-label="인스타 비율">${RATIOS.map(r => `<button type="button" data-ratio="${r.id}">${r.name}</button>`).join('')}</div>
-      <div class="text-row wrap" id="decoFits" role="group" aria-label="비율이 다를 때">${FITS.map(f => `<button type="button" data-fit="${f.id}">${f.name}</button>`).join('')}</div>
-      <p class="deco-label">테두리</p>
-      <div class="text-row wrap" id="decoFrames" role="group" aria-label="테두리">${FRAMES.map(f => `<button type="button" data-frame="${f.id}">${f.name}</button>`).join('')}</div>
-      <label class="crop-zoom" id="decoZoomRow"><span>확대</span><input type="range" id="decoZoom" min="100" max="400" step="1" aria-label="확대"></label>
-      <button type="button" class="small-button apply-all" id="decoAll">모든 사진에 적용</button>
-      <div class="crop-actions"><button type="button" class="small-button" id="decoApply">적용만</button><button type="button" class="primary" id="decoSave">꾸며서 저장</button></div>`;
+      <div id="decoTextPane" hidden>
+        <div class="deco-text-add"><input type="text" id="decoText" maxlength="40" placeholder="넣을 글씨" aria-label="넣을 글씨"><button type="button" class="small-button" id="decoTextAdd">글씨 붙이기</button></div>
+        <div class="deco-fonts" id="decoFx" role="group" aria-label="글씨 모양">${TEXT_FX.map(f => `<button type="button" data-fx="${f.id}" class="fx-${f.id}"><b>가Aa</b><span>${f.name}</span></button>`).join('')}</div>
+        <div class="deco-swatches" id="decoColors" role="group" aria-label="글씨 색"></div>
+        <label class="crop-zoom hue"><span>색조</span><input type="range" id="decoHue" min="0" max="360" step="1" aria-label="색조"></label>
+        <label class="crop-zoom satr"><span>채도</span><input type="range" id="decoSatC" min="0" max="100" step="1" aria-label="채도"></label>
+        <label class="crop-zoom lumr"><span>밝기</span><input type="range" id="decoLum" min="10" max="95" step="1" aria-label="밝기"></label>
+      </div>
+      <div id="decoFramePane" hidden>
+        <p class="deco-label">비율</p>
+        <div class="text-row wrap" id="decoRatios" role="group" aria-label="인스타 비율">${RATIOS.map(r => `<button type="button" data-ratio="${r.id}">${r.name}</button>`).join('')}</div>
+        <div class="text-row wrap" id="decoFits" role="group" aria-label="비율이 다를 때">${FITS.map(f => `<button type="button" data-fit="${f.id}">${f.name}</button>`).join('')}</div>
+        <label class="crop-zoom" id="decoZoomRow"><span>확대</span><input type="range" id="decoZoom" min="100" max="400" step="1" aria-label="확대"></label>
+        <p class="deco-label">테두리</p>
+        <div class="text-row wrap" id="decoFrames" role="group" aria-label="테두리">${FRAMES.map(f => `<button type="button" data-frame="${f.id}">${f.name}</button>`).join('')}</div>
+      </div>
+      <div id="decoSelRow" hidden>
+        <label class="crop-zoom"><span>크기</span><input type="range" id="decoStSize" min="3" max="45" step="1" aria-label="스티커 크기"></label>
+        <label class="crop-zoom"><span>회전</span><input type="range" id="decoStRot" min="-180" max="180" step="1" aria-label="스티커 회전"></label>
+        <div class="deco-adj-actions"><button type="button" class="small-button" id="decoStDel">이 스티커 지우기</button><button type="button" class="small-button" id="decoStClear">스티커 모두 지우기</button></div>
+      </div>
+      </div>
+      <nav class="deco-tools" role="tablist" aria-label="꾸미기 도구">${TOOLS.map(t => `<button type="button" role="tab" data-dtab="${t.id}"><svg viewBox="0 0 24 24" aria-hidden="true">${t.icon}</svg><span>${t.name}</span></button>`).join('')}</nav>
+      <div class="deco-save-row"><button type="button" class="small-button" id="decoAll">모든 사진에 적용</button><button type="button" class="primary" id="decoSave">꾸며서 저장</button></div>`;
     document.body.append(dialog);
     canvas = $('decoCanvas');
     $('decoClose').onclick = () => dialog.close();
     dialog.addEventListener('close', () => { if (session?.view && session.view !== session.preview) session.view.width = session.view.height = 1; session = null; });
     dialog.querySelectorAll('[data-dtab]').forEach(b => b.onclick = () => {
       const t = b.dataset.dtab; tab = t;
-      $('decoFilterPane').hidden = t !== 'filter'; $('decoAdjustPane').hidden = t !== 'adjust'; $('decoEffectPane').hidden = t !== 'effect'; $('decoStickerPane').hidden = t !== 'sticker';
+      for (const [id, pane] of [['filter', 'decoFilterPane'], ['adjust', 'decoAdjustPane'], ['effect', 'decoEffectPane'], ['sticker', 'decoStickerPane'], ['text', 'decoTextPane'], ['frame', 'decoFramePane']]) $(pane).hidden = t !== id;
+      $('decoToolName').textContent = TOOLS.find(x => x.id === t).name;
       if (t === 'adjust') drawCurve();
-      dialog.querySelectorAll('[data-dtab]').forEach(x => x.classList.toggle('on', x === b));
-      if (t !== 'sticker') session.sel = -1;
+      dialog.querySelectorAll('[data-dtab]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', x === b); });
+      if (!stickerTab()) session.sel = -1;
+      dialog.querySelector('.deco-panel').scrollTop = 0;
       sync(); schedule();
     });
     const T = window.PhotoSokText;
@@ -558,11 +594,16 @@
     $('decoText').oninput = () => sync();
     $('decoText').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('decoTextAdd').click(); } };
     dialog.querySelectorAll('[data-fx]').forEach(b => b.onclick = () => { session.fx = b.dataset.fx; const st = composing() ? null : selected(); if (st?.t === 'text') st.fx = b.dataset.fx; sync(); schedule(); });
-    $('decoColors').querySelectorAll('[data-scolor]').forEach(b => b.onclick = () => { session.scolor = b.dataset.scolor; const st = composing() ? null : selected(); if (st?.t === 'text') st.color = b.dataset.scolor; sync(); schedule(); });
+    $('decoColors').querySelectorAll('[data-scolor]').forEach(b => b.onclick = () => pickColor(b.dataset.scolor));
     $('decoStSize').oninput = () => { const st = selected(); if (st) { st.s = $('decoStSize').value / 100; schedule(); } };
     $('decoStRot').oninput = () => { const st = selected(); if (st) { st.r = Number($('decoStRot').value); schedule(); } };
     $('decoStDel').onclick = () => { if (session.sel >= 0) { stickers().splice(session.sel, 1); session.sel = -1; sync(); schedule(); } };
     $('decoStClear').onclick = () => { session.spec.stickers = []; session.sel = -1; sync(); schedule(); };
+    dialog.querySelectorAll('[data-adjpick]').forEach(b => { if (b.dataset.adjpick !== 'wb') b.onclick = () => { session.adjKey = b.dataset.adjpick; sync(); if (session.adjKey === 'curve') drawCurve(); }; });
+    // 글씨 색: 색 동그라미 또는 색조·채도·밝기
+    function pickColor(c) { session.scolor = c; const st = composing() ? null : selected(); if (st?.t === 'text') st.color = c; sync(); schedule(); }
+    const hslInput = () => pickColor(hslHex(+$('decoHue').value, +$('decoSatC').value, +$('decoLum').value));
+    ['decoHue', 'decoSatC', 'decoLum'].forEach(id => $(id).oninput = hslInput);
     dialog.querySelectorAll('[data-adj]').forEach(r => r.oninput = () => { session.spec.adj[r.dataset.adj] = Number(r.value); sync(); schedule(); });
     $('decoAdjReset').onclick = () => { session.spec.adj = {}; session.spec.curve = null; sync(); drawCurve(); schedule(); };
     $('decoCurveReset').onclick = () => { session.spec.curve = null; drawCurve(); schedule(); };
@@ -638,8 +679,8 @@
       const hit = hitSticker(canvas.getContext('2d'), session.spec.stickers, canvas.width, canvas.height, (e.clientX - r.left) * k, (e.clientY - r.top) * k);
       if (hit >= 0) {
         drag = hit; session.sel = hit;
-        if (tab !== 'sticker') dialog.querySelector('[data-dtab="sticker"]').click(); else { sync(); schedule(); }
-      } else if (tab === 'sticker' && session.sel >= 0) { session.sel = -1; sync(); schedule(); }
+        if (!stickerTab()) dialog.querySelector(`[data-dtab="${session.spec.stickers[hit].t === 'text' ? 'text' : 'sticker'}"]`).click(); else { sync(); schedule(); }
+      } else if (stickerTab() && session.sel >= 0) { session.sel = -1; sync(); schedule(); }
     });
     canvas.addEventListener('pointermove', e => {
       if (last && session && drag >= 0) {
@@ -662,7 +703,22 @@
   function schedule() { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; draw(); }); }
   function resize() { const f = frameSize(session.spec, session.preview, 640); canvas.width = f.w; canvas.height = f.h; }
   let tab = 'filter', showPackRef = null;
-  function draw() { if (session) compose(canvas, session.view || session.preview, { ...session.spec, _sel: tab === 'sticker' ? session.sel : -1 }); }
+  const stickerTab = () => tab === 'sticker' || tab === 'text';
+  function hslHex(h, sat, l) {
+    sat /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = sat * Math.min(l, 1 - l);
+    const f = n => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)))).toString(16).padStart(2, '0');
+    return '#' + f(0) + f(8) + f(4);
+  }
+  function hexHsl(hex) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return [0, 0, 100];
+    const n = parseInt(m[1], 16), r = (n >> 16) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+    let h = 0, sat = 0;
+    if (d) { sat = d / (1 - Math.abs(2 * l - 1)); h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h = (h * 60 + 360) % 360; }
+    return [Math.round(h), Math.round(sat * 100), Math.round(l * 100)];
+  }
+  const colorHex = c => (window.PhotoSokText?.COLORS || {})[c] || (/^#[0-9a-f]{6}$/i.test(c || '') ? c : '#ffffff');
+  function draw() { if (session) compose(canvas, session.view || session.preview, { ...session.spec, _sel: stickerTab() ? session.sel : -1 }); }
   function drawCurve() {
     if (!session) return;
     const cv = $('decoCurve'), x = cv.getContext('2d'), W = cv.width, H = cv.height, c = session.spec.curve || CURVE_X;
@@ -703,6 +759,7 @@
     dialog.querySelectorAll('[data-fit]').forEach(b => { const on = b.dataset.fit === s.fit; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
     $('decoFits').hidden = s.ratio === 'orig';
     $('decoZoomRow').hidden = !movable();
+    $('decoStrength').closest('label').hidden = s.filter === 'none';
     $('decoStrength').value = s.strength; $('decoStrengthValue').textContent = s.strength + '%';
     $('decoZoom').value = Math.round(s.crop.zoom * 100);
     dialog.querySelectorAll('[data-adj]').forEach(r => { const v = Number(s.adj?.[r.dataset.adj]) || 0; r.value = v; dialog.querySelector(`[data-adjv="${r.dataset.adj}"]`).textContent = v > 0 ? '+' + v : v; });
@@ -711,14 +768,22 @@
     const hasDbl = !!(session.second && s.dbl);
     $('decoDblRow').hidden = !hasDbl; $('decoDblClear').hidden = !hasDbl; $('decoDblPick').textContent = hasDbl ? '다른 사진으로 바꾸기' : '겹칠 사진 고르기';
     if (hasDbl) { $('decoDblAmount').value = s.dbl.amount ?? 60; $('decoDblValue').textContent = (s.dbl.amount ?? 60) + '%'; dialog.querySelectorAll('[data-dbl]').forEach(b => { const on = b.dataset.dbl === s.dbl.mode; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }); }
+    const ak = session.adjKey || 'exp';
+    dialog.querySelectorAll('[data-adjpick]').forEach(b => { const k = b.dataset.adjpick, on = k === ak; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.classList.toggle('set', k === 'curve' ? !!s.curve : !!Number(s.adj?.[k])); });
+    dialog.querySelectorAll('[data-adjrow]').forEach(r => { r.hidden = r.dataset.adjrow !== ak; });
+    $('decoCurveBox').hidden = ak !== 'curve';
     const st = (s.stickers || [])[session.sel];
-    $('decoSelRow').hidden = !st;
+    $('decoSelRow').hidden = !st || !stickerTab();
     if (st) { $('decoStSize').value = Math.round(st.s * 100); $('decoStRot').value = st.r || 0; }
     const useSel = st?.t === 'text' && !$('decoText').value.trim();
     const fxNow = useSel ? st.fx : (session.fx || 'neon'), colNow = useSel ? st.color : (session.scolor || 'pink');
     dialog.querySelectorAll('[data-fx]').forEach(b => { const on = b.dataset.fx === fxNow; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
     dialog.querySelectorAll('[data-scolor]').forEach(b => { const on = b.dataset.scolor === colNow; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
-    $('decoHint').textContent = tab === 'sticker' ? ((s.stickers || []).length ? '스티커를 끌어서 옮기고, 눌러서 고른 뒤 크기·회전을 바꿔요.' : '이모티콘을 누르거나 글씨를 써서 붙여보세요.') : movable() ? '사진을 끌어서 보일 부분을 고를 수 있어요.' : s.ratio === 'orig' ? '비율을 고르면 1080px 너비로 맞춰요.' : '사진 전체가 보이도록 여백을 넣어요.';
+    if (!['decoHue', 'decoSatC', 'decoLum'].includes(document.activeElement?.id)) { const [h, sa, l] = hexHsl(colorHex(colNow)); $('decoHue').value = h; $('decoSatC').value = sa; $('decoLum').value = Math.max(10, Math.min(95, l)); }
+    const nowHex = colorHex(colNow), [hh] = hexHsl(nowHex);
+    $('decoSatC').parentElement.style.setProperty('--hue', hh); $('decoLum').parentElement.style.setProperty('--hue', hh);
+    dialog.querySelectorAll('.deco-fonts button').forEach(b => b.style.setProperty('--c', nowHex));
+    $('decoHint').textContent = stickerTab() ? ((s.stickers || []).length ? '스티커를 끌어서 옮기고, 눌러서 고른 뒤 크기·회전을 바꿔요.' : '') : tab !== 'frame' ? '' : movable() ? '사진을 끌어서 보일 부분을 고를 수 있어요.' : s.ratio === 'orig' ? '비율을 고르면 1080px 너비로 맞춰요.' : '사진 전체가 보이도록 여백을 넣어요.';
   }
   function thumbs() {
     const box = $('decoFilters'); box.replaceChildren();

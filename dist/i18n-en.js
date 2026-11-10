@@ -101,7 +101,7 @@ window.PhotoSokEN = {
     '이 기기에는 스티커를 보관할 수 없어요. PNG로 저장해주세요.': "Stickers can't be stored on this device. Please save as PNG.",
     '내 스티커에 넣었어요. 꾸미기 → 스티커 → 내 스티커에서 붙일 수 있어요.': 'Added to My stickers. Find it in Style → Stickers → My stickers.',
     '투명 배경 스티커를 저장했어요.': 'Saved the transparent sticker.',
-    '스티커 모음': 'Sticker packs', '내 스티커': 'My stickers', '하트': 'Hearts', '표정': 'Faces', '축하': 'Party', '귀여움': 'Cute', '여행': 'Travel', '음식': 'Food', '라벨': 'Labels', '동물': 'Animals', '날씨': 'Weather', '이모지': 'Emoji', '글씨 라벨': 'Text labels',
+    '스티커 모음': 'Sticker packs', '내 스티커': 'My stickers', '하트': 'Hearts', '표정': 'Faces', '축하': 'Party', '귀여움': 'Cute', '여행': 'Travel', '음식': 'Food', '라벨': 'Labels', '자동 색': 'Auto color', '글씨': 'Text', '꾸미기 도구': 'Style tools', '조절 항목': 'Adjustments', '글씨 모양': 'Text style', '동물': 'Animals', '날씨': 'Weather', '이모지': 'Emoji', '글씨 라벨': 'Text labels',
     '+ 만들기': '+ Make', '고른 스티커를 얼굴에 붙이기': 'Put the chosen sticker on faces', '얼굴을 찾지 못했어요.': "Couldn't find a face.",
     '테이프': 'Tape', '도장': 'Stamp',
     '조절': 'Adjust', '효과': 'Effects', '스티커': 'Stickers', 'HDR': 'HDR', '화사한 글로우': 'Soft glow', '드라마': 'Drama', '그런지': 'Grunge', '느와르': 'Noir', '레트로룩스': 'Retrolux',
