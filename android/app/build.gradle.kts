@@ -12,11 +12,12 @@ val copyWeb by tasks.registering(Sync::class) {
     into(layout.buildDirectory.dir("generated/web/www"))
 }
 
-// 애드몹 ID: android/gradle.properties 의 admobAppId·admobBannerId·admobInterstitialId. 없으면 구글 테스트 광고.
+// 애드몹 ID: android/gradle.properties 의 admobAppId·admobBannerId·admobNativeId·admobRewardedId. 없으면 구글 테스트 광고.
 fun prop(name: String, fallback: String) = (project.findProperty(name) as String?)?.takeIf { it.isNotBlank() } ?: fallback
 val admobAppId = prop("admobAppId", "ca-app-pub-3940256099942544~3347511713")
 val admobBannerId = prop("admobBannerId", "ca-app-pub-3940256099942544/9214589741")
-val admobInterstitialId = prop("admobInterstitialId", "ca-app-pub-3940256099942544/1033173712")
+val admobNativeId = prop("admobNativeId", "ca-app-pub-3940256099942544/2247696110")
+val admobRewardedId = prop("admobRewardedId", "ca-app-pub-3940256099942544/5224354917")
 
 android {
     namespace = "com.habitmonster.photosok"
@@ -28,10 +29,11 @@ android {
         targetSdk = 34
         // CI 빌드 번호를 버전으로: 덮어 설치 가능
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "1.21." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
+        versionName = "1.22." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
         manifestPlaceholders["admobAppId"] = admobAppId
         buildConfigField("String", "ADMOB_BANNER", "\"$admobBannerId\"")
-        buildConfigField("String", "ADMOB_INTERSTITIAL", "\"$admobInterstitialId\"")
+        buildConfigField("String", "ADMOB_NATIVE", "\"$admobNativeId\"")
+        buildConfigField("String", "ADMOB_REWARDED", "\"$admobRewardedId\"")
     }
 
     signingConfigs {

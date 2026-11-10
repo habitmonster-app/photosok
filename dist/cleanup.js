@@ -153,7 +153,7 @@
   function showDone(title, text) {
     const body = $('cleanBody'); body.replaceChildren();
     body.append(el(`<div class="fs-empty"><div class="fs-badge ok"><svg><use href="#i-check"/></svg></div><h3>${title}</h3><p>${text}</p></div>`));
-    window.PhotoSokAds?.afterSave();
+    window.PhotoSokAds?.afterSave('갤러리');
     setBar(`<button type="button" class="primary fs-main" id="cleanAgain">계속 정리하기</button>`).querySelector('#cleanAgain').onclick = () => render();
   }
 

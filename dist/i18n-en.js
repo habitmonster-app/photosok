@@ -319,6 +319,14 @@ window.PhotoSokEN = {
     '네 모서리가 겹치지 않도록 문서 테두리에 맞춰주세요.': "Line the four corners up with the document's edges without overlapping.",
     '왼쪽 위': 'Top left', '오른쪽 위': 'Top right', '오른쪽 아래': 'Bottom right', '왼쪽 아래': 'Bottom left',
     '서류를 반듯하게': 'Straighten documents', '테두리 자르기 · 원근 보정': 'Crop edges · fix perspective',
+    // v1.22
+    "광고 없이 쓰기": "Use without ads",
+    "광고 없이 쓰는 중": "Ad-free now",
+    "광고 한 편 보고 24시간 광고 없이": "Watch one ad, no ads for 24 hours",
+    "24시간 동안 광고 없이 쓸 수 있어요.": "No ads for the next 24 hours.",
+    "광고를 불러오는 중이에요. 잠시 뒤 다시 눌러주세요.": "The ad is still loading. Please try again in a moment.",
+    "광고를 끝까지 보면 광고 없이 쓸 수 있어요.": "Watch the ad to the end to go ad-free.",
+    "광고를 열지 못했어요. 잠시 뒤 다시 시도해주세요.": "Couldn't open the ad. Please try again later.",
     // v1.21
     "광고 개인정보 설정": "Ad privacy settings",
     // v1.20
@@ -513,6 +521,7 @@ window.PhotoSokEN = {
     [/^일부 사진만 허용돼 있어요\. 고른 사진 안에서만 찾아요\. 전체를 정리하려면 $/, 'Only some photos are allowed, so we search just those. To clean everything, choose '],
     [/^을 골라주세요\.$/, '.'],
     [/^설정에서 ‘모두 허용’$/, "'Allow all' in Settings"],
+    [/^(오늘|내일) (오전|오후) (\d+):(\d\d)까지$/, (m, d, ap, h, mm) => 'Until ' + h + ':' + mm + (ap === '오전' ? ' AM' : ' PM') + (d === '내일' ? ' tomorrow' : ' today')],
   ],
   PHRASES: [
     ['용량 제한 없이 합쳤어요', 'merged with no size limit'], ['HEIC 변환 완료', 'HEIC converted'], ['메모리 보호를 위해 축소됨', 'reduced to save memory'],

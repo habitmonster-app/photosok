@@ -17,8 +17,23 @@ import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.interstitial.InterstitialAd
-import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import com.google.android.gms.ads.AdLoader
+import com.google.android.gms.ads.nativead.MediaView
+import com.google.android.gms.ads.nativead.NativeAd
+import com.google.android.gms.ads.nativead.NativeAdOptions
+import com.google.android.gms.ads.nativead.NativeAdView
+import com.google.android.gms.ads.rewarded.RewardedAd
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import android.app.Dialog
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
+import android.util.TypedValue
+import android.view.Gravity
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.TextView
 import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
@@ -72,11 +87,14 @@ class MainActivity : Activity() {
     private lateinit var web: WebView
     private lateinit var adBox: FrameLayout
     private var adView: AdView? = null
-    private var interstitial: InterstitialAd? = null
+    private var nativeAd: NativeAd? = null
+    private var rewarded: RewardedAd? = null
     private var adsStarted = false
     private var adBreaks = 0
-    private var lastShownBreak = -99
-    private var lastShownAt = 0L
+    private var lastSheetAt = 0L
+    private var bannerWanted = true
+    private var dark = true
+    private val prefs by lazy { getSharedPreferences("photosok", MODE_PRIVATE) }
     private val consent: ConsentInformation by lazy { UserMessagingPlatform.getConsentInformation(this) }
     private var chooserCallback: ValueCallback<Array<Uri>>? = null
     private var cameraUri: Uri? = null
@@ -158,6 +176,7 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         adView?.destroy()
+        nativeAd?.destroy()
         web.destroy()
         super.onDestroy()
     }
@@ -165,6 +184,7 @@ class MainActivity : Activity() {
     /** 상태바·내비게이션바 색을 화면 모드에 맞춘다. */
     @Suppress("DEPRECATION")
     private fun applyBars(dark: Boolean) {
+        this.dark = dark
         val color = if (dark) 0xFF101213.toInt() else 0xFFF3F4F2.toInt()
         window.statusBarColor = color
         window.navigationBarColor = color
@@ -484,7 +504,11 @@ class MainActivity : Activity() {
     }
 
     // ---- 광고 (애드몹) ----
-    // 아래 배너 하나 + 저장이 끝난 뒤의 전면 광고(처음 한 번은 건너뛰고, 그 뒤 3번에 1번, 3분 간격).
+    // 아래 배너 하나 + 저장이 끝나면 올라오는 "저장했어요" 카드 속 네이티브 광고(처음 한 번은 건너뛰고, 그 뒤 2번에 1번, 1분 30초 간격).
+    // 보상형: 사용자가 원하면 광고 한 편을 보고 24시간 동안 광고 없이 쓴다.
+    private fun adFreeUntil(): Long = prefs.getLong("adFreeUntil", 0L)
+    private fun adFree(): Boolean = System.currentTimeMillis() < adFreeUntil()
+
     private fun setupAds() {
         val params = ConsentRequestParameters.Builder().build()
         consent.requestConsentInfoUpdate(this, params, {
@@ -497,7 +521,17 @@ class MainActivity : Activity() {
         if (adsStarted) return
         adsStarted = true
         MobileAds.initialize(this) {}
-        runOnUiThread { loadBanner(); loadInterstitial() }
+        runOnUiThread { loadBanner(); loadNative(); loadRewarded() }
+    }
+
+    private fun applyBannerVisibility() {
+        if (!::adBox.isInitialized) return
+        adBox.visibility = if (bannerWanted && !adFree()) View.VISIBLE else View.GONE
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::adBox.isInitialized) applyBannerVisibility()
     }
 
     private fun loadBanner() {
@@ -512,27 +546,119 @@ class MainActivity : Activity() {
         adBox.addView(view, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         adView = view
         view.loadAd(AdRequest.Builder().build())
+        applyBannerVisibility()
     }
 
-    private fun loadInterstitial() {
-        InterstitialAd.load(this, BuildConfig.ADMOB_INTERSTITIAL, AdRequest.Builder().build(), object : InterstitialAdLoadCallback() {
-            override fun onAdLoaded(ad: InterstitialAd) { interstitial = ad }
-            override fun onAdFailedToLoad(error: LoadAdError) { interstitial = null }
+    private fun loadNative() {
+        if (isDestroyed) return
+        AdLoader.Builder(this, BuildConfig.ADMOB_NATIVE)
+            .forNativeAd { ad -> if (isDestroyed) ad.destroy() else { nativeAd?.destroy(); nativeAd = ad } }
+            .withAdListener(object : AdListener() { override fun onAdFailedToLoad(error: LoadAdError) { nativeAd = null } })
+            .withNativeAdOptions(NativeAdOptions.Builder().setAdChoicesPlacement(NativeAdOptions.ADCHOICES_TOP_RIGHT).build())
+            .build()
+            .loadAd(AdRequest.Builder().build())
+    }
+
+    private fun loadRewarded() {
+        RewardedAd.load(this, BuildConfig.ADMOB_REWARDED, AdRequest.Builder().build(), object : RewardedAdLoadCallback() {
+            override fun onAdLoaded(ad: RewardedAd) { rewarded = ad }
+            override fun onAdFailedToLoad(error: LoadAdError) { rewarded = null }
         })
     }
 
-    private fun adBreak() {
+    private fun dp(v: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), resources.displayMetrics).toInt()
+    private fun rounded(color: Int, radius: Int) = GradientDrawable().apply { setColor(color); cornerRadius = dp(radius).toFloat() }
+
+    /** 저장이 끝났을 때. 규칙에 맞으면 "저장했어요" 카드를 아래에서 띄우고 그 안에 네이티브 광고를 보여 준다. */
+    private fun adBreak(where: String) {
         adBreaks++
         val now = System.currentTimeMillis()
-        val ad = interstitial ?: return
-        if (adBreaks < 2 || adBreaks - lastShownBreak < 3 || now - lastShownAt < 180_000) return
-        interstitial = null
-        lastShownBreak = adBreaks; lastShownAt = now
-        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
-            override fun onAdDismissedFullScreenContent() { loadInterstitial() }
-            override fun onAdFailedToShowFullScreenContent(error: com.google.android.gms.ads.AdError) { loadInterstitial() }
+        if (adFree() || adBreaks < 2 || adBreaks % 2 != 0 || now - lastSheetAt < 90_000) return
+        val ad = nativeAd ?: return
+        nativeAd = null
+        lastSheetAt = now
+        showSavedSheet(ad, where)
+        loadNative()
+    }
+
+    private fun showSavedSheet(ad: NativeAd, where: String) {
+        val bg = if (dark) 0xFF1B1E20.toInt() else Color.WHITE
+        val fg = if (dark) 0xFFF2F3F1.toInt() else 0xFF111111.toInt()
+        val muted = if (dark) 0xFF9AA0A6.toInt() else 0xFF6B7075.toInt()
+        val lime = 0xFFC8F04A.toInt()
+        val dialog = Dialog(this)
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(18), dp(20), dp(18))
+            background = GradientDrawable().apply { setColor(bg); setCornerRadii(floatArrayOf(dp(24).toFloat(), dp(24).toFloat(), dp(24).toFloat(), dp(24).toFloat(), 0f, 0f, 0f, 0f)) }
         }
-        ad.show(this)
+        box.addView(TextView(this).apply { text = "저장했어요"; setTextColor(fg); textSize = 20f; setTypeface(typeface, Typeface.BOLD) })
+        if (where.isNotBlank()) box.addView(TextView(this).apply { text = "$where 에서 확인하세요."; setTextColor(muted); textSize = 14f; setPadding(0, dp(4), 0, dp(14)) })
+
+        // 네이티브 광고: 아이콘·제목·설명·이미지·버튼, 그리고 "광고" 표시
+        val adView = NativeAdView(this)
+        val inner = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(14)); background = rounded(if (dark) 0xFF24282B.toInt() else 0xFFF3F4F2.toInt(), 16) }
+        val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val badge = TextView(this).apply { text = "광고"; setTextColor(0xFF111111.toInt()); textSize = 11f; setTypeface(typeface, Typeface.BOLD); setPadding(dp(6), dp(1), dp(6), dp(1)); background = rounded(lime, 6) }
+        val icon = ImageView(this).apply { layoutParams = LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginStart = dp(8); marginEnd = dp(10) } }
+        val headline = TextView(this).apply { setTextColor(fg); textSize = 15f; setTypeface(typeface, Typeface.BOLD); maxLines = 2; layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f) }
+        top.addView(badge); top.addView(icon); top.addView(headline)
+        inner.addView(top)
+        val body = TextView(this).apply { setTextColor(muted); textSize = 13f; maxLines = 2; setPadding(0, dp(8), 0, dp(8)) }
+        inner.addView(body)
+        val media = MediaView(this).apply { layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(170)) }
+        inner.addView(media)
+        val cta = Button(this).apply { isAllCaps = false; setTextColor(0xFF111111.toInt()); textSize = 15f; background = rounded(lime, 12); layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(46)).apply { topMargin = dp(10) } }
+        inner.addView(cta)
+        adView.addView(inner)
+        adView.headlineView = headline; headline.text = ad.headline
+        adView.bodyView = body; body.text = ad.body ?: ""; body.visibility = if (ad.body.isNullOrBlank()) View.GONE else View.VISIBLE
+        adView.iconView = icon; ad.icon?.drawable?.let { icon.setImageDrawable(it) } ?: run { icon.visibility = View.GONE }
+        adView.mediaView = media; ad.mediaContent?.let { media.setMediaContent(it) } ?: run { media.visibility = View.GONE }
+        adView.callToActionView = cta; cta.text = ad.callToAction ?: "자세히 보기"; cta.visibility = if (ad.callToAction.isNullOrBlank()) View.GONE else View.VISIBLE
+        adView.setNativeAd(ad)
+        box.addView(adView)
+
+        val close = Button(this).apply { text = "닫기"; isAllCaps = false; setTextColor(fg); textSize = 15f; background = ColorDrawable(Color.TRANSPARENT); layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)).apply { topMargin = dp(8) } }
+        close.setOnClickListener { dialog.dismiss() }
+        box.addView(close)
+
+        dialog.setContentView(box)
+        dialog.setOnDismissListener { ad.destroy() }
+        dialog.window?.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            setGravity(Gravity.BOTTOM)
+        }
+        dialog.show()
+    }
+
+    /** 보상형 광고를 끝까지 보면 24시간 광고 없이. 결과는 PhotoSokAds.onReward(만료 시각)로 알린다. */
+    private fun showRewarded() {
+        val ad = rewarded
+        if (ad == null) {
+            loadRewarded()
+            web.evaluateJavascript("window.PhotoSokAds && PhotoSokAds.onReward(0, 'notready')", null)
+            return
+        }
+        rewarded = null
+        var earned = false
+        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+            override fun onAdDismissedFullScreenContent() {
+                loadRewarded()
+                val until = if (earned) adFreeUntil() else 0L
+                applyBannerVisibility()
+                web.evaluateJavascript("window.PhotoSokAds && PhotoSokAds.onReward($until, '${if (earned) "ok" else "skipped"}')", null)
+            }
+            override fun onAdFailedToShowFullScreenContent(error: com.google.android.gms.ads.AdError) {
+                loadRewarded()
+                web.evaluateJavascript("window.PhotoSokAds && PhotoSokAds.onReward(0, 'failed')", null)
+            }
+        }
+        ad.show(this) { _ ->
+            earned = true
+            prefs.edit().putLong("adFreeUntil", System.currentTimeMillis() + 24L * 3600_000L).apply()
+        }
     }
 
     inner class Bridge {
@@ -599,12 +725,21 @@ class MainActivity : Activity() {
         // ---- 광고 ----
         @JavascriptInterface
         fun setBanner(visible: Boolean) {
-            runOnUiThread { adBox.visibility = if (visible) View.VISIBLE else View.GONE }
+            runOnUiThread { bannerWanted = visible; applyBannerVisibility() }
         }
 
-        /** 저장 같은 작업이 끝났을 때 부른다. 빈도 규칙에 맞을 때만 전면 광고를 띄운다. */
+        /** 저장 같은 작업이 끝났을 때 부른다. 규칙에 맞을 때만 "저장했어요" 카드(네이티브 광고)를 띄운다. */
         @JavascriptInterface
-        fun adBreak() { runOnUiThread { this@MainActivity.adBreak() } }
+        fun adBreak(where: String) { runOnUiThread { this@MainActivity.adBreak(where) } }
+
+        @JavascriptInterface
+        fun showRewarded() { runOnUiThread { this@MainActivity.showRewarded() } }
+
+        @JavascriptInterface
+        fun adFreeUntil(): Long = this@MainActivity.adFreeUntil()
+
+        @JavascriptInterface
+        fun adsAvailable(): Boolean = adsStarted
 
         @JavascriptInterface
         fun adPrivacyRequired(): Boolean =
