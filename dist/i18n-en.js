@@ -319,6 +319,8 @@ window.PhotoSokEN = {
     '네 모서리가 겹치지 않도록 문서 테두리에 맞춰주세요.': "Line the four corners up with the document's edges without overlapping.",
     '왼쪽 위': 'Top left', '오른쪽 위': 'Top right', '오른쪽 아래': 'Bottom right', '왼쪽 아래': 'Bottom left',
     '서류를 반듯하게': 'Straighten documents', '테두리 자르기 · 원근 보정': 'Crop edges · fix perspective',
+    // v1.21
+    "광고 개인정보 설정": "Ad privacy settings",
     // v1.20
     "공간 확보": "Free up space",
     "큰 사진 줄이기 · 비슷한 사진 정리": "Shrink big photos · clean up similar ones",

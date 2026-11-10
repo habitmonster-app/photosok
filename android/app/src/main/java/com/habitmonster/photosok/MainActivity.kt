@@ -6,6 +6,22 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.util.Size
 import androidx.exifinterface.media.ExifInterface
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.FullScreenContentCallback
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.interstitial.InterstitialAd
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import com.google.android.ump.ConsentInformation
+import com.google.android.ump.ConsentRequestParameters
+import com.google.android.ump.UserMessagingPlatform
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import android.app.Activity
@@ -54,6 +70,14 @@ class MainActivity : Activity() {
     }
 
     private lateinit var web: WebView
+    private lateinit var adBox: FrameLayout
+    private var adView: AdView? = null
+    private var interstitial: InterstitialAd? = null
+    private var adsStarted = false
+    private var adBreaks = 0
+    private var lastShownBreak = -99
+    private var lastShownAt = 0L
+    private val consent: ConsentInformation by lazy { UserMessagingPlatform.getConsentInformation(this) }
     private var chooserCallback: ValueCallback<Array<Uri>>? = null
     private var cameraUri: Uri? = null
     private val io = Executors.newSingleThreadExecutor()
@@ -106,8 +130,14 @@ class MainActivity : Activity() {
         }
         web.addJavascriptInterface(Bridge(), "PhotoSokNative")
         web.setBackgroundColor(0xFF101213.toInt())
-        setContentView(web)
+        // 웹 화면 아래에 광고 자리를 따로 둔다(웹 화면을 덮지 않음).
+        adBox = FrameLayout(this)
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root.addView(web, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
+        root.addView(adBox, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        setContentView(root)
         web.loadUrl(START)
+        setupAds()
         handleIncoming(intent)
     }
 
@@ -127,6 +157,7 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        adView?.destroy()
         web.destroy()
         super.onDestroy()
     }
@@ -138,6 +169,7 @@ class MainActivity : Activity() {
         window.statusBarColor = color
         window.navigationBarColor = color
         web.setBackgroundColor(color)
+        if (::adBox.isInitialized) adBox.setBackgroundColor(color)
         var flags = window.decorView.systemUiVisibility
         flags = if (dark) flags and android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv() and android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
                 else flags or android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
@@ -451,6 +483,58 @@ class MainActivity : Activity() {
         return JSONObject().put("status", "saved").put("id", android.content.ContentUris.parseId(uri)).put("size", file.length())
     }
 
+    // ---- 광고 (애드몹) ----
+    // 아래 배너 하나 + 저장이 끝난 뒤의 전면 광고(처음 한 번은 건너뛰고, 그 뒤 3번에 1번, 3분 간격).
+    private fun setupAds() {
+        val params = ConsentRequestParameters.Builder().build()
+        consent.requestConsentInfoUpdate(this, params, {
+            UserMessagingPlatform.loadAndShowConsentFormIfRequired(this) { _ -> if (consent.canRequestAds()) startAds() }
+        }, { _ -> if (consent.canRequestAds()) startAds() })
+        if (consent.canRequestAds()) startAds()
+    }
+
+    private fun startAds() {
+        if (adsStarted) return
+        adsStarted = true
+        MobileAds.initialize(this) {}
+        runOnUiThread { loadBanner(); loadInterstitial() }
+    }
+
+    private fun loadBanner() {
+        val widthDp = (resources.displayMetrics.widthPixels / resources.displayMetrics.density).toInt()
+        val view = AdView(this)
+        view.adUnitId = BuildConfig.ADMOB_BANNER
+        view.setAdSize(AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(this, widthDp))
+        view.adListener = object : AdListener() {
+            override fun onAdFailedToLoad(error: LoadAdError) { /* 광고가 없으면 자리만 비워 둔다 */ }
+        }
+        adBox.removeAllViews()
+        adBox.addView(view, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        adView = view
+        view.loadAd(AdRequest.Builder().build())
+    }
+
+    private fun loadInterstitial() {
+        InterstitialAd.load(this, BuildConfig.ADMOB_INTERSTITIAL, AdRequest.Builder().build(), object : InterstitialAdLoadCallback() {
+            override fun onAdLoaded(ad: InterstitialAd) { interstitial = ad }
+            override fun onAdFailedToLoad(error: LoadAdError) { interstitial = null }
+        })
+    }
+
+    private fun adBreak() {
+        adBreaks++
+        val now = System.currentTimeMillis()
+        val ad = interstitial ?: return
+        if (adBreaks < 2 || adBreaks - lastShownBreak < 3 || now - lastShownAt < 180_000) return
+        interstitial = null
+        lastShownBreak = adBreaks; lastShownAt = now
+        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
+            override fun onAdDismissedFullScreenContent() { loadInterstitial() }
+            override fun onAdFailedToShowFullScreenContent(error: com.google.android.gms.ads.AdError) { loadInterstitial() }
+        }
+        ad.show(this)
+    }
+
     inner class Bridge {
         @JavascriptInterface
         fun begin(name: String, mime: String): String {
@@ -510,6 +594,25 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun takeShared(): String = synchronized(pendingShared) {
             val list = JSONArray(pendingShared.toList()); pendingShared.clear(); list.toString()
+        }
+
+        // ---- 광고 ----
+        @JavascriptInterface
+        fun setBanner(visible: Boolean) {
+            runOnUiThread { adBox.visibility = if (visible) View.VISIBLE else View.GONE }
+        }
+
+        /** 저장 같은 작업이 끝났을 때 부른다. 빈도 규칙에 맞을 때만 전면 광고를 띄운다. */
+        @JavascriptInterface
+        fun adBreak() { runOnUiThread { this@MainActivity.adBreak() } }
+
+        @JavascriptInterface
+        fun adPrivacyRequired(): Boolean =
+            consent.privacyOptionsRequirementStatus == ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+
+        @JavascriptInterface
+        fun showAdPrivacy() {
+            runOnUiThread { UserMessagingPlatform.showPrivacyOptionsForm(this@MainActivity) { _ -> } }
         }
 
         // ---- 공간 확보 ----

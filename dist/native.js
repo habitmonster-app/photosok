@@ -26,7 +26,9 @@
 
   async function save(blob, name) {
     const id = await upload(blob, name);
-    return JSON.parse(bridge.save(id, blob.type || 'application/octet-stream'));
+    const result = JSON.parse(bridge.save(id, blob.type || 'application/octet-stream'));
+    if (result.status === 'saved') window.PhotoSokAds?.afterSave();
+    return result;
   }
 
   async function share(files) {
