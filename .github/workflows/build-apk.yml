@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
     paths: ["dist/**", "android/**", ".github/workflows/build-apk.yml"]
+  # PR에서는 빌드가 되는지만 확인한다(릴리스·앱 번들은 만들지 않음).
+  pull_request:
+    paths: ["dist/**", "android/**", ".github/workflows/build-apk.yml"]
   workflow_dispatch: {}
 
 permissions:
@@ -30,6 +33,7 @@ jobs:
 
       # 플레이스토어용 앱 번들(.aab): 깃허브 비밀값 UPLOAD_KEY("비밀번호:키파일base64")가 있을 때만 만든다. 실제 광고 ID가 들어간다.
       - name: 플레이스토어용 앱 번들 만들기
+        if: github.event_name != 'pull_request'
         id: aab
         working-directory: android
         env:
@@ -45,6 +49,7 @@ jobs:
           echo "made=1" >> "$GITHUB_OUTPUT"
 
       - name: 폰에서 받을 수 있게 릴리스로 올리기
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
