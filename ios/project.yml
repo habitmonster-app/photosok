@@ -45,7 +45,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.habitmonster.photosok
         PRODUCT_NAME: Sajinjipsa
         INFOPLIST_FILE: Sajinjipsa/Info.plist
-      # 애드몹: 테스트(Debug)는 구글 테스트 광고, 출시(Release)는 실제 ID. 광고 단위 ID가 아직 없으면 테스트 광고 ID가 남아 있다.
+      # 애드몹: 테스트(Debug)는 구글 테스트 광고, 출시(Release)는 실제 ID(비밀값 아님).
       configs:
         Debug:
           ADMOB_APP_ID: ca-app-pub-3940256099942544~1458002511
@@ -54,9 +54,9 @@ targets:
           ADMOB_REWARDED: ca-app-pub-3940256099942544/1712485313
         Release:
           ADMOB_APP_ID: ca-app-pub-6540694097552852~9837107276
-          ADMOB_BANNER: ca-app-pub-3940256099942544/2435281174
-          ADMOB_NATIVE: ca-app-pub-3940256099942544/3986624511
-          ADMOB_REWARDED: ca-app-pub-3940256099942544/1712485313
+          ADMOB_BANNER: ca-app-pub-6540694097552852/1014194490
+          ADMOB_NATIVE: ca-app-pub-6540694097552852/9327798785
+          ADMOB_REWARDED: ca-app-pub-6540694097552852/7951651284
 
 schemes:
   Sajinjipsa:
