@@ -51,6 +51,7 @@ import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Base64
 import android.webkit.JavascriptInterface
+import android.window.OnBackInvokedDispatcher
 import android.webkit.ValueCallback
 import android.webkit.PermissionRequest
 import androidx.core.view.ViewCompat
@@ -176,6 +177,9 @@ class MainActivity : Activity() {
         root.addView(web, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
         root.addView(adBox, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         setContentView(root)
+        if (Build.VERSION.SDK_INT >= 33) {
+            onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT) { handleBack() }
+        }
         web.loadUrl(START)
         setupAds()
         handleIncoming(intent)
@@ -187,8 +191,11 @@ class MainActivity : Activity() {
         handleIncoming(intent)
     }
 
-    @Deprecated("Activity back handling")
-    override fun onBackPressed() {
+    // 안드로이드 13 이상: 새 뒤로가기 방식. 안드로이드 16(targetSdk 36)부터는 onBackPressed 가 아예 불리지 않는다.
+    @Deprecated("Activity back handling (안드로이드 12 이하)")
+    override fun onBackPressed() = handleBack()
+
+    private fun handleBack() {
         // 열린 창(꾸미기·자르기·비교 등)이 있으면 그 창부터 닫고, 없을 때만 앱을 닫는다.
         web.evaluateJavascript("(window.PhotoSokBack ? window.PhotoSokBack() : false)") { handled ->
             if (handled == "true") return@evaluateJavascript

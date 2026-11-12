@@ -462,6 +462,7 @@ window.PhotoSokEN = {
     "안드로이드 11 이상에서 쓸 수 있어요": "Needs Android 11 or later",
     "원본을 안전하게 휴지통으로 보내는 기능이 안드로이드 11부터 있어서, 이 휴대폰에서는 쓸 수 없어요.": "Safely moving originals to the trash arrived in Android 11, so it can't be used on this phone.",
     "고른 사진만 열어요": "Only the photos you pick",
+    "사진 접근 권한 없이 고른 사진만 열어요. 파일은 휴대폰 밖으로 보내지 않아요.": "No photo permission needed: only the photos you pick are opened. Files never leave your phone.",
     "줄이기·꾸미기는 사진 접근 권한 없이 써요. 공간 확보를 쓸 때만 갤러리 권한을 물어요. 파일은 휴대폰 밖으로 보내지 않아요.": "Shrinking and styling need no photo permission. We ask for gallery access only for Free up space. Files never leave your phone.",
     // v1.18
     "사진 고르고 바로 줄이기": "Pick photos and shrink",
