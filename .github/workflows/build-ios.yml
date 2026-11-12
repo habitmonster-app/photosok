@@ -1,0 +1,114 @@
+name: 아이폰 앱 빌드 (iOS)
+
+# 맥이 없어도 깃허브의 맥 빌드 서버에서 아이폰 앱을 만든다.
+# 1) 매번: 시뮬레이터용으로 빌드하고 가상 아이폰에서 켜서 자동 점검 + 화면 사진(결과물 ios-check).
+# 2) 비밀값 4개(APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8)가 있고 main 이거나 직접 실행이면:
+#    출시용으로 서명해서 App Store Connect(TestFlight)에 바로 올린다. 인증서는 애플 클라우드 서명을 쓴다(파일 관리 없음).
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths: ["dist/**", "ios/**", ".github/workflows/build-ios.yml"]
+  workflow_dispatch: {}
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      UPLOAD_OK: ${{ secrets.ASC_KEY_P8 != '' && secrets.APPLE_TEAM_ID != '' && (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 최신 Xcode 고르기
+        run: |
+          XC=$(ls -d /Applications/Xcode_*.app | grep -v beta | sort -V | tail -1)
+          sudo xcode-select -s "$XC"
+          xcodebuild -version
+
+      - name: 웹앱 넣기 + 프로젝트 만들기
+        run: |
+          rsync -a --delete --exclude sw.js --exclude manifest.webmanifest --exclude .nojekyll dist/ ios/www/
+          brew install xcodegen
+          cd ios && xcodegen generate
+
+      - name: 시뮬레이터용 빌드
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild -project Sajinjipsa.xcodeproj -scheme Sajinjipsa -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO build | tail -80
+
+      - name: 가상 아이폰에서 켜서 점검
+        working-directory: ios
+        run: |
+          DEV=$(xcrun simctl list devices available -j | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)['devices']
+          c=[x for k,v in d.items() if 'iOS' in k for x in v if x['name'].startswith('iPhone') and 'Pro Max' in x['name']]
+          c=c or [x for k,v in d.items() if 'iOS' in k for x in v if x['name'].startswith('iPhone')]
+          print(c[-1]['udid'])")
+          xcrun simctl boot "$DEV" || true
+          xcrun simctl bootstatus "$DEV" -b
+          xcrun simctl status_bar "$DEV" override --time 9:41 --batteryState charged --batteryLevel 100 || true
+          APP=$(find build/sim -name 'Sajinjipsa.app' -type d | head -1)
+          xcrun simctl install "$DEV" "$APP"
+          mkdir -p ../ios-check
+          xcrun simctl launch --console-pty --terminate-running-process "$DEV" com.habitmonster.photosok -selftest > ../ios-check/console.txt 2>&1 &
+          for i in $(seq 1 300); do grep -q SELFTEST_RESULT ../ios-check/console.txt && break; sleep 1; done
+          sleep 1
+          xcrun simctl io "$DEV" screenshot ../ios-check/1-intro.png
+          sleep 6
+          xcrun simctl io "$DEV" screenshot ../ios-check/2-home.png
+          tail -30 ../ios-check/console.txt
+          grep SELFTEST_RESULT ../ios-check/console.txt | tail -1 | tee ../ios-check/selftest.txt
+          grep -q '"status":"saved"' ../ios-check/selftest.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-check
+          path: ios-check
+
+      # 점검 결과를 ios-check 가지에도 올린다(깃허브 결과물 파일을 못 받는 곳에서도 볼 수 있게).
+      - name: 점검 결과 올리기
+        if: always()
+        run: |
+          [ -d ios-check ] || exit 0
+          cd ios-check
+          git init -q -b ios-check
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com add -A
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "iOS 점검 ${{ github.sha }}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ios-check
+
+      - name: 출시용 빌드 + App Store Connect 업로드
+        if: env.UPLOAD_OK == 'true'
+        working-directory: ios
+        env:
+          TEAM: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+          KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          set -o pipefail
+          KEY="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
+          printf '%s\n' "$KEY_P8" > "$KEY"
+          AUTH="-allowProvisioningUpdates -authenticationKeyPath $KEY -authenticationKeyID $KEY_ID -authenticationKeyIssuerID $ISSUER"
+          BUILD=$((1000 + ${{ github.run_number }}))
+          xcodebuild -project Sajinjipsa.xcodeproj -scheme Sajinjipsa -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath build/Sajinjipsa.xcarchive \
+            DEVELOPMENT_TEAM="$TEAM" CURRENT_PROJECT_VERSION="$BUILD" CODE_SIGNING_ALLOWED=NO \
+            archive | tail -60
+          # 서명은 내보낼 때 애플 클라우드 인증서로 한다(이 서버에 인증서 파일이 없어도 됨).
+          sed "s/TEAM_ID/$TEAM/" ExportOptions.plist > build/ExportOptions.plist
+          xcodebuild -exportArchive -archivePath build/Sajinjipsa.xcarchive \
+            -exportOptionsPlist build/ExportOptions.plist -exportPath build/export $AUTH | tail -60
+          rm -f "$KEY"
+          echo "올렸어요: 빌드 번호 $BUILD (App Store Connect → TestFlight 에서 10~30분 뒤 보임)" >> "$GITHUB_STEP_SUMMARY"

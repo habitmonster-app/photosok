@@ -1,0 +1,69 @@
+# 사진집사 아이폰 앱. 맥이 없어도 깃허브(맥 빌드 서버)에서 이 파일로 Xcode 프로젝트를 만든다(xcodegen).
+# 웹앱(../dist)을 www 폴더로 복사해 앱 안에 넣는다(복사는 .github/workflows/build-ios.yml 이 한다).
+name: Sajinjipsa
+options:
+  bundleIdPrefix: com.habitmonster
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+packages:
+  GoogleMobileAds:
+    url: https://github.com/googleads/swift-package-manager-google-mobile-ads
+    from: 13.0.0
+  GoogleUMP:
+    url: https://github.com/googleads/swift-package-manager-google-user-messaging-platform
+    from: 3.0.0
+
+settings:
+  base:
+    MARKETING_VERSION: "1.30"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: SN939M46D9
+    OTHER_LDFLAGS: ["$(inherited)", "-ObjC"]
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    GENERATE_INFOPLIST_FILE: NO
+
+targets:
+  Sajinjipsa:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sajinjipsa
+      - path: www
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - package: GoogleMobileAds
+      - package: GoogleUMP
+        product: GoogleUserMessagingPlatform
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.habitmonster.photosok
+        PRODUCT_NAME: Sajinjipsa
+        INFOPLIST_FILE: Sajinjipsa/Info.plist
+      # 애드몹: 테스트(Debug)는 구글 테스트 광고, 출시(Release)는 실제 ID. 광고 단위 ID가 아직 없으면 테스트 광고 ID가 남아 있다.
+      configs:
+        Debug:
+          ADMOB_APP_ID: ca-app-pub-3940256099942544~1458002511
+          ADMOB_BANNER: ca-app-pub-3940256099942544/2435281174
+          ADMOB_NATIVE: ca-app-pub-3940256099942544/3986624511
+          ADMOB_REWARDED: ca-app-pub-3940256099942544/1712485313
+        Release:
+          ADMOB_APP_ID: ca-app-pub-6540694097552852~9837107276
+          ADMOB_BANNER: ca-app-pub-3940256099942544/2435281174
+          ADMOB_NATIVE: ca-app-pub-3940256099942544/3986624511
+          ADMOB_REWARDED: ca-app-pub-3940256099942544/1712485313
+
+schemes:
+  Sajinjipsa:
+    build:
+      targets:
+        Sajinjipsa: all
+    run:
+      config: Debug
+    archive:
+      config: Release
