@@ -61,7 +61,7 @@ jobs:
           APP=$(find build/sim -name 'Sajinjipsa.app' -type d | head -1)
           xcrun simctl install "$DEV" "$APP"
           mkdir -p ../ios-check
-          xcrun simctl launch --console-pty --terminate-running-process "$DEV" com.habitmonster.photosok -selftest > ../ios-check/console.txt 2>&1 &
+          xcrun simctl launch --console-pty --terminate-running-process "$DEV" com.habitmonster.photosok -selftest -AppleLanguages "(ko)" -AppleLocale ko_KR > ../ios-check/console.txt 2>&1 &
           for i in $(seq 1 300); do grep -q SELFTEST_RESULT ../ios-check/console.txt && break; sleep 1; done
           sleep 1
           xcrun simctl io "$DEV" screenshot ../ios-check/1-intro.png
