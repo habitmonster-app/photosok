@@ -1,0 +1,1 @@
+SELFTEST_RESULT {"secure":true,"camera":true,"bridge":"function","app":true,"inApp":true,"adFreeCard":true,"cleanTile":"none","wasm":"object","indexedDB":"ok","worker":"ok","fetch":200,"fonts":"loaded","save":{"where":"파일 앱의 '나의 iPhone → 사진집사' 폴더","status":"saved"},"errors":[]}
