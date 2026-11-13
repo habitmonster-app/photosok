@@ -1,0 +1,7 @@
+/* English texts for the home-screen name and the system permission prompts. */
+"CFBundleDisplayName" = "Photo Butler";
+"CFBundleName" = "Photo Butler";
+"NSCameraUsageDescription" = "The camera is used only when you take ID photos or pictures. Photos never leave your phone.";
+"NSPhotoLibraryAddUsageDescription" = "Permission to add photos is needed to save your finished photos to the Photos app.";
+"NSPhotoLibraryUsageDescription" = "Only the photos you pick are opened. Photos never leave your phone.";
+"NSUserTrackingUsageDescription" = "If you allow, ads will match your interests. Every feature works the same if you don't.";

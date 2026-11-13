@@ -1,0 +1,7 @@
+/* 홈 화면 이름과 권한 안내 글(한국어). */
+"CFBundleDisplayName" = "사진집사";
+"CFBundleName" = "사진집사";
+"NSCameraUsageDescription" = "증명사진과 사진을 찍을 때만 카메라를 써요. 찍은 사진은 휴대폰 밖으로 보내지 않아요.";
+"NSPhotoLibraryAddUsageDescription" = "만든 사진을 사진 앱에 저장하려면 사진 추가 권한이 필요해요.";
+"NSPhotoLibraryUsageDescription" = "고른 사진만 열어요. 사진은 휴대폰 밖으로 보내지 않아요.";
+"NSUserTrackingUsageDescription" = "허용하면 관심사에 맞는 광고가 나와요. 허용하지 않아도 앱의 모든 기능을 똑같이 쓸 수 있어요.";
