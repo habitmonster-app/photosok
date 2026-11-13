@@ -20,7 +20,7 @@ settings:
     MARKETING_VERSION: "1.30"
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "5.0"
-    TARGETED_DEVICE_FAMILY: "1"
+    TARGETED_DEVICE_FAMILY: "1,2"
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: SN939M46D9
     OTHER_LDFLAGS: ["$(inherited)", "-ObjC"]
@@ -45,8 +45,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.habitmonster.photosok
         PRODUCT_NAME: Sajinjipsa
         INFOPLIST_FILE: Sajinjipsa/Info.plist
-        # 아이폰 전용. xcodegen 기본값(1,2 = 아이패드 포함)이 위쪽 설정을 덮어쓰므로 타깃에도 적는다.
-        TARGETED_DEVICE_FAMILY: "1"
+        # 아이폰 + 아이패드(1,2). 아이패드 지원으로 출시했으므로 빼면 안 된다(애플이 축소를 막음).
+        TARGETED_DEVICE_FAMILY: "1,2"
       # 애드몹: 테스트(Debug)는 구글 테스트 광고, 출시(Release)는 실제 ID(비밀값 아님).
       configs:
         Debug:
