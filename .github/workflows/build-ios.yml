@@ -37,6 +37,7 @@ jobs:
           rsync -a --delete --exclude sw.js --exclude manifest.webmanifest --exclude .nojekyll dist/ ios/www/
           brew install xcodegen
           cd ios && xcodegen generate
+          grep -n TARGETED_DEVICE_FAMILY Sajinjipsa.xcodeproj/project.pbxproj || true
 
       - name: 시뮬레이터용 빌드
         working-directory: ios
