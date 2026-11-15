@@ -843,8 +843,8 @@ body[data-screen="work"] .ad-free { display: none; }
 #decoDialog .text-hint:empty { display: none; }
 #decoDialog .deco-panel { flex: 0 1 auto; max-height: 38dvh; overflow-y: auto; padding: 8px 16px 4px; overscroll-behavior: contain; }
 #decoDialog .deco-panel > div > .deco-label:first-child { margin-top: 2px; }
-#decoDialog .deco-tools { flex: 0 0 auto; display: grid; grid-template-columns: repeat(6, 1fr); padding: 6px 4px; border-top: 1px solid var(--line); background: #0b0c0d; }
-#decoDialog .deco-tools button { display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 52px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
+#decoDialog .deco-tools { flex: 0 0 auto; display: grid; grid-template-columns: repeat(8, minmax(44px, 1fr)); padding: 6px 2px; border-top: 1px solid var(--line); background: #0b0c0d; overflow-x: auto; scrollbar-width: none; }
+#decoDialog .deco-tools button { display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 52px; padding: 0 1px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 10.5px; font-weight: 600; letter-spacing: -.02em; white-space: nowrap; cursor: pointer; }
 #decoDialog .deco-tools svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 #decoDialog .deco-tools button.on { color: var(--text); }
 #decoDialog .deco-tools button.on svg { stroke: var(--accent); }
@@ -897,3 +897,29 @@ body[data-screen="work"] .ad-free { display: none; }
 #decoDialog .deco-fonts button { flex: 0 0 74px; min-height: 58px; }
 #decoDialog .small-button { background: var(--subtle); color: var(--text); border: 1px solid var(--line); }
 #decoDialog .deco-curve { max-height: 150px; width: auto; max-width: 100%; margin: 0 auto; }
+
+/* v1.31: 레이아웃(여러 장 한 장에), 사진 겹치기, 배경색 */
+.deco-layouts { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 8px; -webkit-overflow-scrolling: touch; }
+.deco-layouts button { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 5px; width: 58px; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 10.5px; font-weight: 600; cursor: pointer; }
+.deco-layouts span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 58px; }
+.deco-layouts svg { width: 42px; height: 56px; padding: 3px; border: 2px solid transparent; border-radius: 9px; }
+.deco-layouts .lt-bg { fill: var(--subtle); }
+.deco-layouts .lt-c { fill: #5b6166; }
+.deco-layouts .lt-1 { fill: #7c8388; }
+.deco-layouts .lt-2 { fill: #474c50; }
+.deco-layouts button.on { color: var(--text); }
+.deco-layouts button.on svg { border-color: var(--accent); }
+.deco-layouts button.on .lt-c { fill: color-mix(in srgb, var(--accent) 70%, #333); }
+.deco-layouts button.on .lt-1 { fill: color-mix(in srgb, var(--accent) 45%, #333); }
+.deco-layouts button.on .lt-2 { fill: color-mix(in srgb, var(--accent) 30%, #333); }
+.deco-photo-pick { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; -webkit-overflow-scrolling: touch; }
+.deco-photo-pick button { flex: 0 0 64px; height: 64px; padding: 0; border: 1.5px solid var(--line); border-radius: 12px; background: var(--subtle); overflow: hidden; cursor: pointer; }
+.deco-photo-pick button:active { transform: scale(.94); }
+.deco-photo-pick img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.deco-photo-pick .pick-album { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--text); font: inherit; font-size: 10.5px; font-weight: 600; border-style: dashed; }
+.deco-photo-pick .pick-album svg { width: 22px; height: 22px; fill: none; stroke: var(--accent); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.deco-bgs button { border-color: rgba(255,255,255,.55); }
+.deco-bgs .bg-auto { background: conic-gradient(from 0deg, #ffb3c1, #ffe08a, #b9f0c9, #a9d4ff, #d3b8ff, #ffb3c1); }
+.deco-bgs .bg-auto.on { background: var(--sw); }
+#decoLayoutPane .crop-zoom, #decoSelRow .crop-zoom { margin: 8px 0 2px; }
+#decoShapeRow .text-row { margin-top: 8px; }

@@ -88,6 +88,8 @@
     { id: 'effect', name: '효과', icon: '<path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4Z"/><path d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8Z"/>' },
     { id: 'sticker', name: '스티커', icon: '<path d="M5 4h14v9l-6 7H5Z"/><path d="M13 20v-5a2 2 0 0 1 2-2h4"/><circle cx="9.5" cy="9.5" r=".8"/><circle cx="14.5" cy="9.5" r=".8"/>' },
     { id: 'text', name: '글씨', icon: '<path d="M5 7V5h14v2M12 5v14M9 19h6"/>' },
+    { id: 'overlay', name: '겹치기', icon: '<rect x="3" y="7" width="12" height="13" rx="2"/><rect x="9" y="3" width="12" height="12" rx="2"/><path d="m12 12 2.5-2.5L18 13"/>' },
+    { id: 'layout', name: '레이아웃', icon: '<rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M12 3.5v17M12 12h8.5"/>' },
     { id: 'frame', name: '비율', icon: '<rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 3v3M16 18v3M3 10h1M20 14h1"/>' },
   ];
   const MY_KEY = 'photosok-my-filters';
@@ -97,12 +99,65 @@
   const RATIOS = [
     { id: 'orig', name: '원본 비율' },
     { id: '1:1', name: '정사각 1:1', w: 1080, h: 1080 },
+    { id: '3:4', name: '세로 3:4', w: 1080, h: 1440 },
     { id: '4:5', name: '세로 4:5', w: 1080, h: 1350 },
+    { id: '4:3', name: '가로 4:3', w: 1440, h: 1080 },
     { id: '9:16', name: '스토리 9:16', w: 1080, h: 1920 },
     { id: '1.91:1', name: '가로 1.91:1', w: 1080, h: 566 },
   ];
-  const FITS = [{ id: 'cover', name: '꽉 채우기' }, { id: 'white', name: '흰 여백' }, { id: 'black', name: '검정 여백' }, { id: 'blur', name: '흐린 배경' }];
-  const DEFAULT = { filter: 'none', strength: 100, ratio: 'orig', fit: 'cover', crop: { x: .5, y: .5, zoom: 1 }, adj: {}, frame: 'none', stickers: [] };
+  // pad: 사진 전체가 보이게 줄이고 남는 곳을 배경색(spec.bg)으로. 예전 white/black 은 pad + 흰색/검정으로 읽는다.
+  const FITS = [{ id: 'cover', name: '꽉 채우기' }, { id: 'pad', name: '여백 넣기' }, { id: 'blur', name: '흐린 배경' }];
+  // 여백·레이아웃 간격에 쓰는 배경색. auto: 사진에서 뽑은 색
+  const BGS = [
+    ['#ffffff', '흰색'], ['#f4efe6', '크림'], ['#e9e9ee', '연한 회색'], ['#111111', '검정'], ['#b9b7ff', '라벤더'], ['#ffd4df', '분홍'],
+    ['#ffe0c4', '살구'], ['#fff1a6', '노랑'], ['#cdeedb', '민트'], ['#cfe4ff', '하늘'], ['#1f2a44', '남색'],
+  ];
+  // 레이아웃: 칸 위치는 [x, y, 너비, 높이] 비율. 첫 칸에는 지금 꾸미는 사진이 들어간다.
+  const LAYOUTS = [
+    { id: 'single', cells: [[0, 0, 1, 1]] },
+    { id: 'v2', cells: [[0, 0, 1, .5], [0, .5, 1, .5]] },
+    { id: 'h2', cells: [[0, 0, .5, 1], [.5, 0, .5, 1]] },
+    { id: 'top-big', cells: [[0, 0, 1, .64], [0, .64, 1, .36]] },
+    { id: 'left-big', cells: [[0, 0, .64, 1], [.64, 0, .36, 1]] },
+    { id: 'v3', cells: [[0, 0, 1, 1 / 3], [0, 1 / 3, 1, 1 / 3], [0, 2 / 3, 1, 1 / 3]] },
+    { id: 'h3', cells: [[0, 0, 1 / 3, 1], [1 / 3, 0, 1 / 3, 1], [2 / 3, 0, 1 / 3, 1]] },
+    { id: 'left1', cells: [[0, 0, .5, 1], [.5, 0, .5, .5], [.5, .5, .5, .5]] },
+    { id: 'top1', cells: [[0, 0, 1, .5], [0, .5, .5, .5], [.5, .5, .5, .5]] },
+    { id: 'g4', cells: [[0, 0, .5, .5], [.5, 0, .5, .5], [0, .5, .5, .5], [.5, .5, .5, .5]] },
+    { id: 'g6', cells: [[0, 0, .5, 1 / 3], [.5, 0, .5, 1 / 3], [0, 1 / 3, .5, 1 / 3], [.5, 1 / 3, .5, 1 / 3], [0, 2 / 3, .5, 1 / 3], [.5, 2 / 3, .5, 1 / 3]] },
+    { id: 'circle', circle: true, cells: [[.1, .1, .8, .8]] },
+  ];
+  const MAX_EXTRAS = 12, MAX_PHOTO_LAYERS = 6;
+  const DEFAULT = { filter: 'none', strength: 100, ratio: 'orig', fit: 'cover', bg: '#ffffff', crop: { x: .5, y: .5, zoom: 1 }, adj: {}, frame: 'none', stickers: [], layout: null };
+  // 예전 꾸미기 기록(fit: white/black)을 새 방식으로 바꿔 읽는다.
+  function normSpec(s) {
+    if (s.fit === 'white' || s.fit === 'black') { s.bg = s.fit === 'black' ? '#000000' : '#ffffff'; s.fit = 'pad'; }
+    if (!/^#[0-9a-f]{6}$/i.test(s.bg || '')) s.bg = '#ffffff';
+    return s;
+  }
+  // 그릴 때 쓰는 다른 사진들(레이아웃 칸·겹친 사진). photos[0]은 비워 두고 1번부터 쓴다. cuts: 사람만 오린 그림
+  let media = { photos: [], cuts: new Map(), placeholder: false };
+  const layoutOf = spec => { const L = spec?.layout && LAYOUTS.find(l => l.id === spec.layout.id); return L && L.id !== 'single' ? L : null; };
+  function cellRects(L, w, h, gapPct) {
+    if (L.circle) { const d = Math.min(w, h) * .8; return [{ x: (w - d) / 2, y: (h - d) / 2, w: d, h: d, circle: true }]; }
+    const g = Math.round(Math.min(w, h) * (gapPct || 0) / 100);
+    const edge = (v, size, end) => v <= .001 || v >= .999 ? (v <= .001 ? g : size - g) : v * size + (end ? -g / 2 : g / 2);
+    return L.cells.map(([cx, cy, cw, ch]) => {
+      const x0 = edge(cx, w, false), x1 = edge(cx + cw, w, true), y0 = edge(cy, h, false), y1 = edge(cy + ch, h, true);
+      return { x: x0, y: y0, w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) };
+    });
+  }
+  function roundRectPath(ctx, x, y, w, h, r) {
+    r = Math.max(0, Math.min(r, w / 2, h / 2));
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  const LAYOUT_NAMES = { single: '한 장', v2: '위아래 2칸', h2: '좌우 2칸', 'top-big': '위 크게', 'left-big': '왼쪽 크게', v3: '위아래 3칸', h3: '좌우 3칸', left1: '왼쪽 크게 3칸', top1: '위 크게 3칸', g4: '4칸', g6: '6칸', circle: '동그라미' };
+  const BG_BUTTONS = BGS.map(([c, n]) => `<button type="button" data-bg="${c}" aria-label="${n}" style="--sw:${c}"></button>`).join('') + '<button type="button" data-bg="auto" class="bg-auto" aria-label="사진에서 고른 색"></button>';
+  function layoutThumb(L) {
+    const W = 30, H = 40;
+    if (L.circle) return `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true"><rect width="${W}" height="${H}" rx="3" class="lt-bg"/><circle cx="15" cy="20" r="11" class="lt-c"/></svg>`;
+    return `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true"><rect width="${W}" height="${H}" rx="3" class="lt-bg"/>${L.cells.map(([x, y, w, h], i) => `<rect x="${x * W + 1.2}" y="${y * H + 1.2}" width="${w * W - 2.4}" height="${h * H - 2.4}" rx="1.5" class="lt-c${i ? ' lt-' + (i % 3) : ''}"/>`).join('')}</svg>`;
+  }
   // 스티커: 위치·크기는 결과 사진에 대한 비율이라 미리보기와 저장 결과가 같다. t:'emoji' 이모티콘, t:'text' 글씨(효과 fx).
   // 스티커 모음: 테마별 이모티콘
   const PACKS = [
@@ -138,6 +193,11 @@
   function stickerBox(ctx, st, w, h) {
     const px = Math.max(6, st.s * Math.min(w, h));
     if (st.t === 'emoji') return { hw: px * .62, hh: px * .62, px };
+    if (st.t === 'photo') {
+      const im = photoLayerImg(st), a = im ? im.width / im.height : 1;
+      if (st.shape === 'circle') return { hw: px / 2, hh: px / 2, px, im };
+      return { hw: (a >= 1 ? px : px * a) / 2, hh: (a >= 1 ? px / a : px) / 2, px, im };
+    }
     if (st.t === 'img' || st.t === 'art') { const im = st.t === 'art' ? artImg(st.src) : window.PhotoSokMyStickers?.image(st.id), a = im ? im.width / im.height : 1; return { hw: (a >= 1 ? px : px * a) / 2, hh: (a >= 1 ? px / a : px) / 2, px, im }; }
     ctx.save(); ctx.font = stickerFont(st, px);
     const lines = String(st.text || '').split('\n');
@@ -152,7 +212,9 @@
       ctx.save();
       ctx.translate(st.x * w, st.y * h); ctx.rotate((st.r || 0) * Math.PI / 180);
       ctx.font = stickerFont(st, px); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      if (st.flip && st.t !== 'text') ctx.scale(-1, 1);
       if (st.t === 'emoji') ctx.fillText(st.e, 0, px * .04);
+      else if (st.t === 'photo') drawPhotoLayer(ctx, st, b);
       else if (st.t === 'img' || st.t === 'art') { if (b.im) ctx.drawImage(b.im, -b.hw, -b.hh, b.hw * 2, b.hh * 2); }
       else {
         const color = colorHex(st.color);
@@ -207,6 +269,38 @@
       }
       ctx.restore();
     });
+  }
+  // 겹친 사진: 사람만 오리기를 고르면 오린 그림을, 아니면 사진을 쓴다.
+  function photoLayerImg(st) { return (st.shape === 'cut' && media.cuts.get(st.p)) || media.photos[st.p] || null; }
+  function drawPhotoLayer(ctx, st, b) {
+    const im = b.im; if (!im) return;
+    const W = b.hw * 2, H = b.hh * 2;
+    if (st.shape === 'cut') {
+      ctx.save();
+      if (st.edge) { // 오린 가장자리를 따라 흰 테두리(스티커처럼)
+        const e = Math.max(2, b.px * .02), sil = whiteSilhouette(im);
+        for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2; ctx.drawImage(sil, -W / 2 + Math.cos(a) * e, -H / 2 + Math.sin(a) * e, W, H); }
+      } else { ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = b.px * .03; ctx.shadowOffsetY = b.px * .01; }
+      ctx.drawImage(im, -W / 2, -H / 2, W, H); ctx.restore(); return;
+    }
+    const r = st.shape === 'circle' ? W / 2 : st.shape === 'round' ? Math.min(W, H) * .12 : 0;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.28)'; ctx.shadowBlur = b.px * .05; ctx.shadowOffsetY = b.px * .012;
+    if (st.edge) { const e = Math.max(2, b.px * .025); ctx.fillStyle = '#ffffff'; if (st.shape === 'circle') { ctx.beginPath(); ctx.arc(0, 0, W / 2 + e, 0, Math.PI * 2); } else roundRectPath(ctx, -W / 2 - e, -H / 2 - e, W + e * 2, H + e * 2, r ? r + e : 0); ctx.fill(); }
+    else { ctx.fillStyle = '#000'; if (st.shape === 'circle') { ctx.beginPath(); ctx.arc(0, 0, W / 2, 0, Math.PI * 2); } else roundRectPath(ctx, -W / 2, -H / 2, W, H, r); ctx.fill(); }
+    ctx.restore(); ctx.save();
+    if (st.shape === 'circle') { ctx.beginPath(); ctx.arc(0, 0, W / 2, 0, Math.PI * 2); } else roundRectPath(ctx, -W / 2, -H / 2, W, H, r);
+    ctx.clip();
+    const sc = Math.max(W / im.width, H / im.height);
+    ctx.drawImage(im, -im.width * sc / 2, -im.height * sc / 2, im.width * sc, im.height * sc);
+    ctx.restore();
+  }
+  const silCache = new WeakMap();
+  function whiteSilhouette(im) {
+    let c = silCache.get(im); if (c) return c;
+    c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+    const x = c.getContext('2d'); x.drawImage(im, 0, 0); x.globalCompositeOperation = 'source-in'; x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+    silCache.set(im, c); return c;
   }
   function hitSticker(ctx, list, w, h, x, y) {
     for (let i = (list || []).length - 1; i >= 0; i--) {
@@ -423,7 +517,19 @@
   function composeCore(out, src, spec) {
     const ctx = out.getContext('2d'), w = out.width, h = out.height;
     ctx.imageSmoothingQuality = 'high';
+    const L = layoutOf(spec);
+    if (L) { drawLayout(ctx, w, h, src, spec, L); return; }
     const fit = spec.ratio === 'orig' ? 'cover' : spec.fit;
+    if (fit === 'pad' || fit === 'white' || fit === 'black') {
+      // 여백은 고른 배경색 그대로 두고 사진에만 필터를 입힌다.
+      ctx.fillStyle = fit === 'black' ? '#000' : fit === 'white' ? '#fff' : spec.bg || '#fff'; ctx.fillRect(0, 0, w, h);
+      const s = Math.min(w / src.width, h / src.height), pw = Math.max(1, Math.round(src.width * s)), ph = Math.max(1, Math.round(src.height * s));
+      const t = document.createElement('canvas'); t.width = pw; t.height = ph;
+      const tx = t.getContext('2d'); tx.imageSmoothingQuality = 'high'; tx.drawImage(src, 0, 0, pw, ph);
+      grade(tx, pw, ph, params(spec.filter, spec.strength, spec.adj || {}, spec.curve));
+      ctx.drawImage(t, Math.round((w - pw) / 2), Math.round((h - ph) / 2)); t.width = t.height = 1;
+      return;
+    }
     if (fit === 'cover') {
       const l = PhotoEngine.coverLayout(src.width, src.height, w, h, spec.ratio === 'orig' ? null : spec.crop);
       ctx.drawImage(src, w / 2 + l.dx - src.width * l.scale / 2, h / 2 + l.dy - src.height * l.scale / 2, src.width * l.scale, src.height * l.scale);
@@ -438,6 +544,40 @@
       ctx.drawImage(src, (w - src.width * s) / 2, (h - src.height * s) / 2, src.width * s, src.height * s);
     }
     grade(ctx, w, h, params(spec.filter, spec.strength, spec.adj || {}, spec.curve));
+  }
+  // 레이아웃: 배경색을 깔고 칸마다 사진을 꽉 채워(끌어서 위치 조절) 넣는다. 필터는 사진에만.
+  function drawLayout(ctx, w, h, src, spec, L) {
+    const lay = spec.layout;
+    ctx.fillStyle = spec.bg || '#fff'; ctx.fillRect(0, 0, w, h);
+    const rects = cellRects(L, w, h, lay.gap ?? 2), q = params(spec.filter, spec.strength, spec.adj || {}, spec.curve);
+    const rad = (lay.round || 0) / 100 * Math.min(w, h);
+    rects.forEach((r, i) => {
+      const c = (lay.cells || [])[i] || {}, img = c.p === 0 ? src : media.photos[c.p];
+      const path = () => { if (r.circle) { ctx.beginPath(); ctx.arc(r.x + r.w / 2, r.y + r.h / 2, r.w / 2, 0, Math.PI * 2); } else roundRectPath(ctx, r.x, r.y, r.w, r.h, rad); };
+      if (!img) {
+        if (!media.placeholder) return;
+        ctx.save(); path(); ctx.fillStyle = 'rgba(128,132,138,.28)'; ctx.fill();
+        const m = Math.min(r.w, r.h) * .14, cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+        ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = Math.max(2, m * .18); ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(cx - m, cy); ctx.lineTo(cx + m, cy); ctx.moveTo(cx, cy - m); ctx.lineTo(cx, cy + m); ctx.stroke(); ctx.restore();
+        return;
+      }
+      const cw = Math.max(1, Math.round(r.w)), ch = Math.max(1, Math.round(r.h));
+      const t = document.createElement('canvas'); t.width = cw; t.height = ch;
+      const tx = t.getContext('2d'); tx.imageSmoothingQuality = 'high';
+      if (c.flip) { tx.translate(cw, 0); tx.scale(-1, 1); }
+      const l = PhotoEngine.coverLayout(img.width, img.height, cw, ch, c.crop);
+      tx.drawImage(img, cw / 2 + l.dx * (c.flip ? -1 : 1) - img.width * l.scale / 2, ch / 2 + l.dy - img.height * l.scale / 2, img.width * l.scale, img.height * l.scale);
+      tx.setTransform(1, 0, 0, 1, 0, 0);
+      grade(tx, cw, ch, q);
+      ctx.save(); path(); ctx.clip(); ctx.drawImage(t, Math.round(r.x), Math.round(r.y)); ctx.restore();
+      t.width = t.height = 1;
+    });
+    if (spec._cellSel >= 0 && rects[spec._cellSel]) {
+      const r = rects[spec._cellSel]; ctx.save(); ctx.setLineDash([8, 6]); ctx.lineWidth = 3; ctx.strokeStyle = '#c8f04a';
+      if (r.circle) { ctx.beginPath(); ctx.arc(r.x + r.w / 2, r.y + r.h / 2, r.w / 2 - 1.5, 0, Math.PI * 2); } else roundRectPath(ctx, r.x + 1.5, r.y + 1.5, r.w - 3, r.h - 3, rad);
+      ctx.stroke(); ctx.restore();
+    }
   }
   function frameSize(spec, src, maxEdge) {
     const r = RATIOS.find(x => x.id === spec.ratio);
@@ -512,12 +652,38 @@
         <div class="text-row wrap" id="decoRatios" role="group" aria-label="인스타 비율">${RATIOS.map(r => `<button type="button" data-ratio="${r.id}">${r.name}</button>`).join('')}</div>
         <div class="text-row wrap" id="decoFits" role="group" aria-label="비율이 다를 때">${FITS.map(f => `<button type="button" data-fit="${f.id}">${f.name}</button>`).join('')}</div>
         <label class="crop-zoom" id="decoZoomRow"><span>확대</span><input type="range" id="decoZoom" min="100" max="400" step="1" aria-label="확대"></label>
+        <div id="decoBgBox" hidden><p class="deco-label">배경</p><div class="deco-swatches deco-bgs" role="group" aria-label="배경색">${BG_BUTTONS}</div></div>
         <p class="deco-label">테두리</p>
         <div class="text-row wrap" id="decoFrames" role="group" aria-label="테두리">${FRAMES.map(f => `<button type="button" data-frame="${f.id}">${f.name}</button>`).join('')}</div>
       </div>
+      <div id="decoOverlayPane" hidden>
+        <p class="deco-label">사진 위에 사진 올리기</p>
+        <div class="deco-photo-pick" id="decoOvPhotos" role="group" aria-label="올릴 사진"></div>
+        <p class="deco-note" id="decoOvNote">올린 사진은 끌어서 옮기고, 아래에서 크기·모양을 바꿔요.</p>
+      </div>
+      <div id="decoLayoutPane" hidden>
+        <div class="deco-layouts" id="decoLayouts" role="group" aria-label="레이아웃">${LAYOUTS.map(L => `<button type="button" data-layout="${L.id}" aria-label="${LAYOUT_NAMES[L.id]}">${L.id === 'single' ? '<svg viewBox="0 0 30 40" aria-hidden="true"><rect width="30" height="40" rx="3" class="lt-bg"/><rect x="5" y="7" width="20" height="26" rx="1.5" class="lt-c"/></svg>' : layoutThumb(L)}<span>${LAYOUT_NAMES[L.id]}</span></button>`).join('')}</div>
+        <div id="decoLayoutOpts" hidden>
+          <p class="deco-label" id="decoCellLabel">칸에 넣을 사진</p>
+          <div class="deco-photo-pick" id="decoCellPhotos" role="group" aria-label="칸에 넣을 사진"></div>
+          <div id="decoCellRow" hidden>
+            <label class="crop-zoom"><span>확대</span><input type="range" id="decoCellZoom" min="100" max="400" step="1" aria-label="칸 사진 확대"></label>
+            <div class="deco-adj-actions"><button type="button" class="small-button" id="decoCellFlip">좌우 반전</button><button type="button" class="small-button" id="decoCellSwap">다음 칸과 바꾸기</button><button type="button" class="small-button" id="decoCellEmpty">칸 비우기</button></div>
+          </div>
+          <label class="crop-zoom"><span>간격</span><input type="range" id="decoGap" min="0" max="8" step="0.5" aria-label="칸 간격"></label>
+          <label class="crop-zoom"><span>모서리</span><input type="range" id="decoRound" min="0" max="12" step="1" aria-label="칸 모서리 둥글게"></label>
+          <p class="deco-label">배경</p><div class="deco-swatches deco-bgs" role="group" aria-label="배경색">${BG_BUTTONS}</div>
+        </div>
+      </div>
+      <input type="file" id="decoPhotoFile" accept="image/*" multiple hidden>
       <div id="decoSelRow" hidden>
         <label class="crop-zoom"><span>크기</span><input type="range" id="decoStSize" min="3" max="45" step="1" aria-label="스티커 크기"></label>
         <label class="crop-zoom"><span>회전</span><input type="range" id="decoStRot" min="-180" max="180" step="1" aria-label="스티커 회전"></label>
+        <div id="decoShapeRow" hidden>
+          <div class="text-row wrap" id="decoShapes" role="group" aria-label="사진 모양"><button type="button" data-shape="rect">네모</button><button type="button" data-shape="round">둥근 네모</button><button type="button" data-shape="circle">동그라미</button><button type="button" data-shape="cut">사람만 오리기</button></div>
+          <div class="text-row wrap"><button type="button" id="decoEdge">흰 테두리</button></div>
+        </div>
+        <div class="deco-adj-actions"><button type="button" class="small-button" id="decoStFlip">좌우 반전</button><button type="button" class="small-button" id="decoStDup">복제</button><button type="button" class="small-button" id="decoStFront">맨 앞으로</button></div>
         <div class="deco-adj-actions"><button type="button" class="small-button" id="decoStDel">이 스티커 지우기</button><button type="button" class="small-button" id="decoStClear">스티커 모두 지우기</button></div>
       </div>
       </div>
@@ -526,14 +692,17 @@
     document.body.append(dialog);
     canvas = $('decoCanvas');
     $('decoClose').onclick = () => dialog.close();
-    dialog.addEventListener('close', () => { if (session?.view && session.view !== session.preview) session.view.width = session.view.height = 1; session = null; });
+    dialog.addEventListener('close', () => { if (session?.view && session.view !== session.preview) session.view.width = session.view.height = 1; session = null; for (const c of [...media.photos, ...media.cuts.values()]) if (c) c.width = c.height = 1; media = { photos: [], cuts: new Map(), placeholder: false }; });
     dialog.querySelectorAll('[data-dtab]').forEach(b => b.onclick = () => {
       const t = b.dataset.dtab; tab = t;
-      for (const [id, pane] of [['filter', 'decoFilterPane'], ['adjust', 'decoAdjustPane'], ['effect', 'decoEffectPane'], ['sticker', 'decoStickerPane'], ['text', 'decoTextPane'], ['frame', 'decoFramePane']]) $(pane).hidden = t !== id;
+      for (const [id, pane] of [['filter', 'decoFilterPane'], ['adjust', 'decoAdjustPane'], ['effect', 'decoEffectPane'], ['sticker', 'decoStickerPane'], ['text', 'decoTextPane'], ['overlay', 'decoOverlayPane'], ['layout', 'decoLayoutPane'], ['frame', 'decoFramePane']]) $(pane).hidden = t !== id;
       $('decoToolName').textContent = TOOLS.find(x => x.id === t).name;
       if (t === 'adjust') drawCurve();
+      if (t === 'overlay' || t === 'layout') photoStrips();
       dialog.querySelectorAll('[data-dtab]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', x === b); });
       if (!stickerTab()) session.sel = -1;
+      else if (session.sel >= 0 && (stickers()[session.sel]?.t === 'photo') !== (t === 'overlay')) session.sel = -1;
+      if (t !== 'layout') session.cellSel = -1;
       dialog.querySelector('.deco-panel').scrollTop = 0;
       sync(); schedule();
     });
@@ -598,7 +767,127 @@
     $('decoStSize').oninput = () => { const st = selected(); if (st) { st.s = $('decoStSize').value / 100; schedule(); } };
     $('decoStRot').oninput = () => { const st = selected(); if (st) { st.r = Number($('decoStRot').value); schedule(); } };
     $('decoStDel').onclick = () => { if (session.sel >= 0) { stickers().splice(session.sel, 1); session.sel = -1; sync(); schedule(); } };
-    $('decoStClear').onclick = () => { session.spec.stickers = []; session.sel = -1; sync(); schedule(); };
+    // 겹치기 탭에서는 올린 사진만, 다른 탭에서는 스티커·글씨만 지운다.
+    $('decoStClear').onclick = () => { const ov = tab === 'overlay'; session.spec.stickers = stickers().filter(s => (s.t === 'photo') !== ov); session.sel = -1; sync(); schedule(); };
+    $('decoStFlip').onclick = () => { const st = selected(); if (st && st.t !== 'text') { st.flip = !st.flip; schedule(); } };
+    $('decoStDup').onclick = () => {
+      const st = selected(); if (!st) return;
+      if (st.t === 'photo' && stickers().filter(s => s.t === 'photo').length >= MAX_PHOTO_LAYERS) { toast('사진은 6장까지 올릴 수 있어요.', true); return; }
+      if (stickers().length >= 20) { toast('스티커는 20개까지 붙일 수 있어요.', true); return; }
+      stickers().push({ ...JSON.parse(JSON.stringify(st)), x: Math.min(.95, st.x + .05), y: Math.min(.95, st.y + .05) }); session.sel = stickers().length - 1; sync(); schedule();
+    };
+    $('decoStFront').onclick = () => { const st = selected(); if (!st) return; stickers().splice(session.sel, 1); stickers().push(st); session.sel = stickers().length - 1; sync(); schedule(); };
+    dialog.querySelectorAll('[data-shape]').forEach(b => b.onclick = async () => {
+      const st = selected(); if (st?.t !== 'photo') return;
+      const v = b.dataset.shape;
+      if (v === 'cut' && !media.cuts.has(st.p)) {
+        const ex = session.extras[st.p]; if (!ex) return;
+        dialog.querySelectorAll('[data-shape]').forEach(x => x.disabled = true); $('decoOvNote').textContent = '사람을 찾는 중이에요…';
+        try {
+          const c = trimAlpha(await PhotoSokFace.cutout(ex.prev, 300));
+          if (!c) { toast('사진에서 사람을 찾지 못했어요. 다른 모양을 골라주세요.', true); return; }
+          media.cuts.set(st.p, c);
+        } catch (e) { toast(errText(e, '사진에서 사람을 찾지 못했어요. 다른 모양을 골라주세요.'), true); return; }
+        finally { dialog.querySelectorAll('[data-shape]').forEach(x => x.disabled = false); $('decoOvNote').textContent = '올린 사진은 끌어서 옮기고, 아래에서 크기·모양을 바꿔요.'; }
+      }
+      st.shape = v; sync(); schedule();
+    });
+    $('decoEdge').onclick = () => { const st = selected(); if (st?.t === 'photo') { st.edge = !st.edge; sync(); schedule(); } };
+
+    // ── 겹치기·레이아웃에 쓰는 다른 사진: session.extras[i] = { file, rotation, prev, key } (i ≥ 1) ──
+    const listPhotos = () => state.items.filter(i => i !== session.item && i.sourceType !== 'pdf');
+    async function extraFor(file, rotation, key) {
+      const ex = session.extras;
+      if (key) { const found = ex.findIndex(e => e && e.key === key); if (found > 0) return found; }
+      if (ex.length > MAX_EXTRAS) { toast('사진은 12장까지 넣을 수 있어요.', true); return -1; }
+      const prev = await oriented(file, rotation, 900);
+      ex.push({ file, rotation, prev, key }); media.photos[ex.length - 1] = prev;
+      return ex.length - 1;
+    }
+    const fromItem = async it => extraFor(await itemInputFile(it), it.rotation || 0, it.url);
+    function addOverlay(p) {
+      if (!(p > 0)) return;
+      if (stickers().filter(s => s.t === 'photo').length >= MAX_PHOTO_LAYERS) { toast('사진은 6장까지 올릴 수 있어요.', true); return; }
+      add({ t: 'photo', p, s: .42, shape: 'round', edge: true });
+    }
+    const cells = () => session.spec.layout?.cells || [];
+    function putInCell(p) {
+      if (!(p > 0) || !layoutOf(session.spec)) return false;
+      const list = cells();
+      let i = session.cellSel >= 0 ? session.cellSel : list.findIndex(c => c.p == null);
+      if (i < 0) { toast('사진을 바꿀 칸을 먼저 눌러주세요.', true); return false; }
+      list[i] = { p, crop: { x: .5, y: .5, zoom: 1 } };
+      session.cellSel = i;
+      return true;
+    }
+    let pickMode = 'overlay', busyPick = false;
+    const pickFromAlbum = mode => { pickMode = mode; $('decoPhotoFile').click(); };
+    $('decoPhotoFile').onchange = async () => {
+      const files = [...$('decoPhotoFile').files]; $('decoPhotoFile').value = ''; if (!files.length || busyPick) return;
+      busyPick = true;
+      try {
+        for (const [k, f] of files.slice(0, MAX_PHOTO_LAYERS).entries()) {
+          const p = await extraFor(await keepFile(f), 0, null); if (p < 0) break;
+          if (k && pickMode === 'cell') session.cellSel = -1; // 여러 장이면 다음 빈 칸에 이어서
+          if (pickMode === 'cell') { if (!putInCell(p)) break; } else addOverlay(p);
+        }
+      } catch (e) { toast(errText(e, '사진을 열지 못했어요.'), true); }
+      finally { busyPick = false; sync(); schedule(); photoStrips(); }
+    };
+    function photoStrips() {
+      const list = listPhotos();
+      for (const [boxId, mode] of [['decoOvPhotos', 'overlay'], ['decoCellPhotos', 'cell']]) {
+        const box = $(boxId); box.replaceChildren();
+        const alb = document.createElement('button'); alb.type = 'button'; alb.className = 'pick-album';
+        alb.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="m4 17 5-4.5 4 3.5 2.5-2 4.5 3.5"/></svg><span>앨범에서</span>';
+        alb.onclick = () => pickFromAlbum(mode); box.append(alb);
+        list.slice(0, 30).forEach(it => {
+          const b = document.createElement('button'); b.type = 'button'; b.className = 'pick-photo';
+          const img = document.createElement('img'); img.src = it.outURL || it.url; img.alt = ''; img.loading = 'lazy'; img.onerror = () => { img.style.visibility = 'hidden'; };
+          b.setAttribute('aria-label', mode === 'cell' ? '이 사진을 칸에 넣기' : '이 사진 올리기'); b.append(img);
+          b.onclick = async () => {
+            if (busyPick) return; busyPick = true;
+            try { const p = await fromItem(it); if (mode === 'cell') putInCell(p); else addOverlay(p); }
+            catch (e) { toast(errText(e, '사진을 열지 못했어요.'), true); }
+            finally { busyPick = false; sync(); schedule(); }
+          };
+          box.append(b);
+        });
+      }
+    }
+    photoStripsRef = photoStrips;
+    dialog.querySelectorAll('[data-layout]').forEach(b => b.onclick = async () => {
+      const id = b.dataset.layout, s = session.spec;
+      if (busyPick) return;
+      if (id === 'single') { s.layout = null; session.cellSel = -1; resize(); sync(); schedule(); return; }
+      const L = LAYOUTS.find(l => l.id === id), old = s.layout?.cells || [{ p: 0 }];
+      const next = L.cells.map((_, i) => old[i] && old[i].p != null ? { p: old[i].p, flip: old[i].flip, crop: { x: .5, y: .5, zoom: 1 } } : null);
+      if (!next[0] && !next.some(c => c?.p === 0)) next[0] = { p: 0, crop: { x: .5, y: .5, zoom: 1 } };
+      // 빈 칸은 목록에 담긴 다른 사진으로 차례대로 채운다
+      busyPick = true;
+      try {
+        const used = new Set(next.filter(Boolean).map(c => c.p)), pool = listPhotos();
+        for (let i = 0; i < next.length; i++) {
+          if (next[i]) continue;
+          let p = null;
+          while (pool.length && p == null) { const q = await fromItem(pool.shift()).catch(() => -1); if (q > 0 && !used.has(q)) p = q; }
+          if (p != null) used.add(p);
+          next[i] = { p, crop: { x: .5, y: .5, zoom: 1 } };
+        }
+      } finally { busyPick = false; }
+      s.layout = { id, gap: s.layout?.gap ?? 2, round: s.layout?.round ?? 0, cells: next };
+      if (s.ratio === 'orig') { s.ratio = L.circle ? '1:1' : '3:4'; s.crop = { x: .5, y: .5, zoom: 1 }; }
+      session.cellSel = -1; resize(); sync(); schedule();
+      if (next.some(c => c.p == null)) toast('빈 칸을 눌러 사진을 넣어주세요.');
+    });
+    const cellNow = () => cells()[session.cellSel];
+    $('decoCellZoom').oninput = () => { const c = cellNow(); if (c) { c.crop = { ...(c.crop || {}), zoom: $('decoCellZoom').value / 100 }; schedule(); } };
+    $('decoCellFlip').onclick = () => { const c = cellNow(); if (c) { c.flip = !c.flip; schedule(); } };
+    $('decoCellSwap').onclick = () => { const list = cells(), i = session.cellSel; if (i < 0 || list.length < 2) return; const j = (i + 1) % list.length; [list[i], list[j]] = [list[j], list[i]]; session.cellSel = j; sync(); schedule(); };
+    $('decoCellEmpty').onclick = () => { const c = cellNow(); if (c) { c.p = null; c.crop = { x: .5, y: .5, zoom: 1 }; sync(); schedule(); } };
+    $('decoGap').oninput = () => { if (session.spec.layout) { session.spec.layout.gap = Number($('decoGap').value); schedule(); } };
+    $('decoRound').oninput = () => { if (session.spec.layout) { session.spec.layout.round = Number($('decoRound').value); schedule(); } };
+    dialog.querySelectorAll('[data-bg]').forEach(b => b.onclick = () => { session.spec.bg = b.dataset.bg === 'auto' ? autoBg() : b.dataset.bg; sync(); schedule(); });
     dialog.querySelectorAll('[data-adjpick]').forEach(b => { if (b.dataset.adjpick !== 'wb') b.onclick = () => { session.adjKey = b.dataset.adjpick; sync(); if (session.adjKey === 'curve') drawCurve(); }; });
     // 글씨 색: 색 동그라미 또는 색조·채도·밝기
     function pickColor(c) { session.scolor = c; const st = composing() ? null : selected(); if (st?.t === 'text') st.color = c; sync(); schedule(); }
@@ -671,22 +960,49 @@
     $('decoApply').onclick = () => finish('apply');
     $('decoSave').onclick = () => finish('save');
     $('decoAll').onclick = () => finish('all');
-    let last = null, drag = -1;
+    let last = null, drag = -1, cellDrag = -1, cellMoved = 0;
+    // 레이아웃 칸 찾기 (테두리가 있으면 안쪽 영역 기준)
+    const cellAt = (x, y) => {
+      const L = layoutOf(session.spec); if (!L) return -1;
+      const W = canvas.width, H = canvas.height, ins = frameInset(session.spec.frame || 'none', W, H) || { x: 0, y: 0, w: W, h: H };
+      const rects = cellRects(L, ins.w, ins.h, session.spec.layout.gap ?? 2);
+      return rects.findIndex(r => x >= ins.x + r.x && x <= ins.x + r.x + r.w && y >= ins.y + r.y && y <= ins.y + r.y + r.h);
+    };
     canvas.addEventListener('pointerdown', e => {
-      canvas.setPointerCapture(e.pointerId); last = { x: e.clientX, y: e.clientY }; drag = -1;
+      canvas.setPointerCapture(e.pointerId); last = { x: e.clientX, y: e.clientY }; drag = -1; cellDrag = -1; cellMoved = 0;
       if (!session) return;
       const r = canvas.getBoundingClientRect(), k = canvas.width / r.width;
       const hit = hitSticker(canvas.getContext('2d'), session.spec.stickers, canvas.width, canvas.height, (e.clientX - r.left) * k, (e.clientY - r.top) * k);
       if (hit >= 0) {
         drag = hit; session.sel = hit;
-        if (!stickerTab()) dialog.querySelector(`[data-dtab="${session.spec.stickers[hit].t === 'text' ? 'text' : 'sticker'}"]`).click(); else { sync(); schedule(); }
-      } else if (stickerTab() && session.sel >= 0) { session.sel = -1; sync(); schedule(); }
+        const want = { text: 'text', photo: 'overlay' }[session.spec.stickers[hit].t] || 'sticker';
+        if (tab !== want) dialog.querySelector(`[data-dtab="${want}"]`).click(); else { sync(); schedule(); }
+        session.sel = hit; sync(); schedule();
+      } else {
+        if (stickerTab() && session.sel >= 0) { session.sel = -1; sync(); schedule(); }
+        cellDrag = cellAt((e.clientX - r.left) * k, (e.clientY - r.top) * k);
+      }
     });
     canvas.addEventListener('pointermove', e => {
       if (last && session && drag >= 0) {
         const r = canvas.getBoundingClientRect(), st = session.spec.stickers[drag];
         if (st) { st.x = Math.min(1, Math.max(0, st.x + (e.clientX - last.x) / r.width)); st.y = Math.min(1, Math.max(0, st.y + (e.clientY - last.y) / r.height)); }
         last = { x: e.clientX, y: e.clientY }; schedule(); return;
+      }
+      if (last && session && cellDrag >= 0) {
+        const c = cells()[cellDrag], img = c && (c.p === 0 ? (session.view || session.preview) : media.photos[c.p]);
+        cellMoved += Math.abs(e.clientX - last.x) + Math.abs(e.clientY - last.y);
+        if (img && cellMoved > 6) {
+          const L = layoutOf(session.spec), W = canvas.width, H = canvas.height, ins = frameInset(session.spec.frame || 'none', W, H) || { w: W, h: H };
+          const rc = cellRects(L, ins.w, ins.h, session.spec.layout.gap ?? 2)[cellDrag], ratio = W / canvas.getBoundingClientRect().width;
+          const cr = c.crop || (c.crop = { x: .5, y: .5, zoom: 1 }), l = PhotoEngine.coverLayout(img.width, img.height, Math.round(rc.w), Math.round(rc.h), cr);
+          const sx = c.flip ? -1 : 1;
+          if (l.overflowX > 0) cr.x = Math.min(1, Math.max(0, cr.x - sx * (e.clientX - last.x) * ratio / l.overflowX));
+          if (l.overflowY > 0) cr.y = Math.min(1, Math.max(0, cr.y - (e.clientY - last.y) * ratio / l.overflowY));
+          if (session.cellSel !== cellDrag && tab === 'layout') { session.cellSel = cellDrag; sync(); }
+          schedule();
+        }
+        last = { x: e.clientX, y: e.clientY }; return;
       }
       if (!last || !session || !movable()) return;
       const ratio = canvas.width / canvas.getBoundingClientRect().width, s = session, c = s.spec.crop;
@@ -695,15 +1011,44 @@
       if (l.overflowY > 0) c.y = Math.min(1, Math.max(0, c.y - (e.clientY - last.y) * ratio / l.overflowY));
       last = { x: e.clientX, y: e.clientY }; schedule();
     });
-    const end = () => { last = null; drag = -1; };
+    const end = e => {
+      // 칸을 톡 누르면: 레이아웃 탭으로 가서 그 칸을 고르고, 빈 칸이면 앨범을 연다
+      if (e?.type === 'pointerup' && session && cellDrag >= 0 && cellMoved <= 6) {
+        const i = cellDrag, empty = cells()[i]?.p == null;
+        if (!stickerTab() || empty) {
+          if (tab !== 'layout') dialog.querySelector('[data-dtab="layout"]').click();
+          session.cellSel = i; sync(); schedule();
+          if (empty) pickFromAlbum('cell');
+        }
+      }
+      last = null; drag = -1; cellDrag = -1;
+    };
     canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
   }
-  const movable = () => session && session.spec.ratio !== 'orig' && session.spec.fit === 'cover';
+  const movable = () => session && session.spec.ratio !== 'orig' && session.spec.fit === 'cover' && !layoutOf(session.spec);
   let raf = 0;
   function schedule() { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; draw(); }); }
   function resize() { const f = frameSize(session.spec, session.preview, 640); canvas.width = f.w; canvas.height = f.h; }
-  let tab = 'filter', showPackRef = null;
-  const stickerTab = () => tab === 'sticker' || tab === 'text';
+  let tab = 'filter', showPackRef = null, photoStripsRef = null;
+  const stickerTab = () => tab === 'sticker' || tab === 'text' || tab === 'overlay';
+  // 투명한 가장자리를 잘라낸다. 그려진 곳이 거의 없으면 null
+  function trimAlpha(c) {
+    const w = c.width, h = c.height, d = c.getContext('2d').getImageData(0, 0, w, h).data;
+    let x0 = w, y0 = h, x1 = -1, y1 = -1, n = 0;
+    for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2) if (d[(y * w + x) * 4 + 3] > 40) { n++; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (n < w * h / 4 * .01) { c.width = c.height = 1; return null; }
+    const pad = Math.round(Math.max(w, h) * .02); x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(w - 1, x1 + pad); y1 = Math.min(h - 1, y1 + pad);
+    const out = document.createElement('canvas'); out.width = x1 - x0 + 1; out.height = y1 - y0 + 1;
+    out.getContext('2d').drawImage(c, -x0, -y0); c.width = c.height = 1; return out;
+  }
+  // 사진에서 고른 배경색: 평균색을 밝고 부드럽게
+  function autoBg() {
+    const c = session.preview, t = document.createElement('canvas'); t.width = 24; t.height = 24;
+    const x = t.getContext('2d'); x.drawImage(c, 0, 0, 24, 24); const d = x.getImageData(0, 0, 24, 24).data;
+    let R = 0, G = 0, B = 0; for (let i = 0; i < d.length; i += 4) { R += d[i]; G += d[i + 1]; B += d[i + 2]; }
+    const n = d.length / 4, [hh, ss] = hexHsl('#' + [R, G, B].map(v => Math.round(v / n).toString(16).padStart(2, '0')).join(''));
+    return hslHex(hh, Math.min(60, Math.max(18, ss)), 86);
+  }
   function hslHex(h, sat, l) {
     sat /= 100; l /= 100; const k = n => (n + h / 30) % 12, a = sat * Math.min(l, 1 - l);
     const f = n => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)))).toString(16).padStart(2, '0');
@@ -718,7 +1063,7 @@
     return [Math.round(h), Math.round(sat * 100), Math.round(l * 100)];
   }
   const colorHex = c => (window.PhotoSokText?.COLORS || {})[c] || (/^#[0-9a-f]{6}$/i.test(c || '') ? c : '#ffffff');
-  function draw() { if (session) compose(canvas, session.view || session.preview, { ...session.spec, _sel: stickerTab() ? session.sel : -1 }); }
+  function draw() { if (session) compose(canvas, session.view || session.preview, { ...session.spec, _sel: stickerTab() ? session.sel : -1, _cellSel: tab === 'layout' ? session.cellSel : -1 }); }
   function drawCurve() {
     if (!session) return;
     const cv = $('decoCurve'), x = cv.getContext('2d'), W = cv.width, H = cv.height, c = session.spec.curve || CURVE_X;
@@ -757,7 +1102,20 @@
     dialog.querySelectorAll('[data-ratio]').forEach(b => { const on = b.dataset.ratio === s.ratio; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
     dialog.querySelectorAll('[data-frame]').forEach(b => { const on = b.dataset.frame === (s.frame || 'none'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
     dialog.querySelectorAll('[data-fit]').forEach(b => { const on = b.dataset.fit === s.fit; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
-    $('decoFits').hidden = s.ratio === 'orig';
+    const lay = layoutOf(s);
+    $('decoFits').hidden = s.ratio === 'orig' || !!lay;
+    $('decoBgBox').hidden = !!lay || s.ratio === 'orig' || s.fit !== 'pad';
+    dialog.querySelectorAll('[data-bg]').forEach(b => { const on = b.dataset.bg === s.bg || (b.dataset.bg === 'auto' && !BGS.some(([c]) => c === s.bg)); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); if (b.dataset.bg === 'auto' && on) b.style.setProperty('--sw', s.bg); });
+    dialog.querySelectorAll('[data-layout]').forEach(b => { const on = b.dataset.layout === (lay ? lay.id : 'single'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+    $('decoLayoutOpts').hidden = !lay;
+    if (lay) {
+      $('decoGap').value = s.layout.gap ?? 2; $('decoRound').value = s.layout.round || 0;
+      $('decoRound').closest('label').hidden = !!lay.circle; $('decoGap').closest('label').hidden = !!lay.circle;
+      const c = s.layout.cells[session.cellSel];
+      $('decoCellRow').hidden = !c || c.p == null;
+      if (c) $('decoCellZoom').value = Math.round((c.crop?.zoom || 1) * 100);
+      $('decoCellLabel').textContent = session.cellSel >= 0 ? (session.cellSel + 1) + '번 칸에 넣을 사진' : '칸에 넣을 사진';
+    }
     $('decoZoomRow').hidden = !movable();
     $('decoStrength').closest('label').hidden = s.filter === 'none';
     $('decoStrength').value = s.strength; $('decoStrengthValue').textContent = s.strength + '%';
@@ -774,7 +1132,16 @@
     $('decoCurveBox').hidden = ak !== 'curve';
     const st = (s.stickers || [])[session.sel];
     $('decoSelRow').hidden = !st || !stickerTab();
+    const isPhoto = st?.t === 'photo';
+    $('decoShapeRow').hidden = !isPhoto; $('decoStFlip').hidden = !st || st.t === 'text';
+    $('decoStSize').max = isPhoto ? 100 : 45;
     if (st) { $('decoStSize').value = Math.round(st.s * 100); $('decoStRot').value = st.r || 0; }
+    $('decoStDel').textContent = isPhoto ? '이 사진 빼기' : '이 스티커 지우기';
+    $('decoStClear').textContent = tab === 'overlay' ? '올린 사진 모두 빼기' : '스티커 모두 지우기';
+    if (isPhoto) {
+      dialog.querySelectorAll('[data-shape]').forEach(b => { const on = b.dataset.shape === (st.shape || 'rect'); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+      $('decoEdge').classList.toggle('on', !!st.edge); $('decoEdge').setAttribute('aria-pressed', !!st.edge);
+    }
     const useSel = st?.t === 'text' && !$('decoText').value.trim();
     const fxNow = useSel ? st.fx : (session.fx || 'neon'), colNow = useSel ? st.color : (session.scolor || 'pink');
     dialog.querySelectorAll('[data-fx]').forEach(b => { const on = b.dataset.fx === fxNow; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
@@ -783,7 +1150,8 @@
     const nowHex = colorHex(colNow), [hh] = hexHsl(nowHex);
     $('decoSatC').parentElement.style.setProperty('--hue', hh); $('decoLum').parentElement.style.setProperty('--hue', hh);
     dialog.querySelectorAll('.deco-fonts button').forEach(b => b.style.setProperty('--c', nowHex));
-    $('decoHint').textContent = stickerTab() ? ((s.stickers || []).length ? '스티커를 끌어서 옮기고, 눌러서 고른 뒤 크기·회전을 바꿔요.' : '') : tab !== 'frame' ? '' : movable() ? '사진을 끌어서 보일 부분을 고를 수 있어요.' : s.ratio === 'orig' ? '비율을 고르면 1080px 너비로 맞춰요.' : '사진 전체가 보이도록 여백을 넣어요.';
+    const photos = (s.stickers || []).filter(x => x.t === 'photo').length;
+    $('decoHint').textContent = tab === 'layout' ? (lay ? '칸을 눌러 고르고, 끌어서 보일 부분을 맞춰요.' : '여러 장을 한 장에 모으려면 칸 모양을 골라요.') : tab === 'overlay' ? (photos ? '사진을 끌어서 옮기고, 눌러서 고른 뒤 크기·모양을 바꿔요.' : '') : stickerTab() ? ((s.stickers || []).length ? '스티커를 끌어서 옮기고, 눌러서 고른 뒤 크기·회전을 바꿔요.' : '') : tab !== 'frame' ? '' : movable() ? '사진을 끌어서 보일 부분을 고를 수 있어요.' : s.ratio === 'orig' ? '비율을 고르면 1080px 너비로 맞춰요.' : '사진 전체가 보이도록 여백을 넣어요.';
   }
   function thumbs() {
     const box = $('decoFilters'); box.replaceChildren();
@@ -812,8 +1180,19 @@
     try {
       if (!base) { const input = await itemInputFile(item); base = { file: input, rotation: item.sourceType === 'pdf' ? 0 : (item.rotation || 0) }; }
       const preview = await oriented(base.file, base.rotation, 640);
-      session = { item, base, date: new Date((item.originalFile || item.file).lastModified || Date.now()), preview, spec: JSON.parse(JSON.stringify({ ...DEFAULT, ...(item.decoSpec || {}) })) };
+      session = { item, base, date: new Date((item.originalFile || item.file).lastModified || Date.now()), preview, spec: normSpec(JSON.parse(JSON.stringify({ ...DEFAULT, ...(item.decoSpec || {}) }))) };
       if (!session.spec.adj) session.spec.adj = {};
+      // 레이아웃 칸·겹친 사진에 썼던 사진을 다시 불러온다
+      media = { photos: [], cuts: new Map(), placeholder: true };
+      session.extras = [null]; session.cellSel = -1;
+      for (const e of (item.decoSpec && item.decoExtras || []).slice(1)) {
+        const prev = e ? await oriented(e.file, e.rotation, 900).catch(() => null) : null;
+        session.extras.push(prev ? { ...e, prev } : null); media.photos[session.extras.length - 1] = prev;
+      }
+      for (const st of session.spec.stickers || []) if (st.t === 'photo' && st.shape === 'cut' && media.photos[st.p] && !media.cuts.has(st.p)) {
+        const c = await PhotoSokFace.cutout(media.photos[st.p], 300).then(trimAlpha).catch(() => null);
+        if (c) media.cuts.set(st.p, c); else st.shape = 'round';
+      }
       if (!Array.isArray(session.spec.stickers)) session.spec.stickers = [];
       session.sel = -1;
       session.view = null; session.second = item.decoSecond || null;
@@ -831,8 +1210,17 @@
   }
 
   // 한 장에 꾸미기를 적용한다 (글씨가 있으면 꾸민 사진 위에 다시 얹는다).
-  async function applyTo(item, base, spec, secondFile) {
+  async function applyTo(item, base, spec, secondFile, extras = null) {
     if (session) session.date = new Date((item.originalFile || item.file).lastModified || Date.now());
+    // 레이아웃·겹친 사진은 저장할 때 큰 사진으로 다시 그린다
+    const used = new Set([...(layoutOf(spec) ? spec.layout.cells.map(c => c?.p) : []), ...(spec.stickers || []).filter(x => x.t === 'photo').map(x => x.p)].filter(p => p > 0 && extras?.[p]));
+    const hi = { photos: [], cuts: new Map(), placeholder: false };
+    for (const p of used) hi.photos[p] = await oriented(extras[p].file, extras[p].rotation, 2400);
+    for (const st of spec.stickers || []) if (st.t === 'photo' && st.shape === 'cut' && hi.photos[st.p] && !hi.cuts.has(st.p)) {
+      const c = await PhotoSokFace.cutout(hi.photos[st.p], 500).then(trimAlpha).catch(() => null); if (c) hi.cuts.set(st.p, c);
+    }
+    const keepMedia = media; media = hi;
+    try {
     const raw = await oriented(base.file, base.rotation, 4096);
     const second = secondFile && spec.dbl ? await oriented(secondFile, 0, 2400) : null;
     const src = await prepare(raw, spec, second, {});
@@ -859,12 +1247,17 @@
     if (!item.editBackup) item.editBackup = { file: item.file, sourceType: item.sourceType, pageIndex: item.pageIndex, width: item.width, height: item.height, rotation: item.rotation, url: item.url };
     else if (item.url !== item.editBackup.url) URL.revokeObjectURL(item.url);
     item.decoBase = base; item.decoSpec = JSON.parse(JSON.stringify(spec)); item.decoSecond = secondFile && spec.dbl ? secondFile : null;
+    item.decoExtras = used.size ? extras.map(e => e && { file: e.file, rotation: e.rotation, key: e.key }) : null;
     const name = stem + '_꾸미기.jpg';
     item.file = new File([finalBlob], name, { type: 'image/jpeg' });
     item.sourceType = 'photo'; delete item.pageIndex;
     item.url = URL.createObjectURL(item.file); item.width = width; item.height = height; item.rotation = 0;
     touchItem(item);
     return { blob: finalBlob, name };
+    } finally {
+      media = keepMedia;
+      for (const c of [...hi.photos, ...hi.cuts.values()]) if (c) c.width = c.height = 1;
+    }
   }
   async function baseFor(item) {
     const b = baseOf(item); if (b) return b;
@@ -874,17 +1267,25 @@
 
   async function finish(mode) {
     if (!session) return;
-    const { item, base, spec, second } = session;
+    const { item, base, spec, second, extras } = session;
+    if (layoutOf(spec) && spec.layout.cells.some(c => c.p == null || (c.p > 0 && !extras[c.p]))) {
+      toast('빈 칸이 있어요. 칸을 눌러 사진을 넣어주세요.', true);
+      if (tab !== 'layout') dialog.querySelector('[data-dtab="layout"]').click();
+      return;
+    }
     const buttons = ['decoApply', 'decoSave', 'decoAll'].map($).filter(Boolean);
     buttons.forEach(b => b.disabled = true);
     try {
-      const r = await applyTo(item, base, spec, second);
+      const r = await applyTo(item, base, spec, second, extras);
       if (mode === 'all') {
         const others = state.items.filter(i => i !== item && i.sourceType !== 'pdf');
         let n = 1;
         for (const o of others) {
           $('decoAll').textContent = '적용 중… ' + (n + 1) + ' / ' + (others.length + 1);
-          try { await applyTo(o, await baseFor(o), { ...JSON.parse(JSON.stringify(spec)), crop: { x: .5, y: .5, zoom: 1 } }, second); n++; } catch (_) {}
+          // 레이아웃과 올린 사진은 이 사진에만 넣고, 나머지 사진에는 필터·비율·스티커만 같게
+          const other = { ...JSON.parse(JSON.stringify(spec)), crop: { x: .5, y: .5, zoom: 1 }, layout: null };
+          other.stickers = (other.stickers || []).filter(x => x.t !== 'photo');
+          try { await applyTo(o, await baseFor(o), other, second); n++; } catch (_) {}
         }
         dialog.close(); render();
         toast(n + '장에 같은 꾸미기를 적용했어요.');

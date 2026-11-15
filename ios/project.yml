@@ -17,7 +17,7 @@ packages:
 
 settings:
   base:
-    MARKETING_VERSION: "1.30"
+    MARKETING_VERSION: "1.31"
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "5.0"
     TARGETED_DEVICE_FAMILY: "1,2"
