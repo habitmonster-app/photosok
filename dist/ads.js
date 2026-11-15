@@ -12,7 +12,7 @@
     if (!has('adBreak')) return;
     if (where) lastWhere = where;
     clearTimeout(timer);
-    timer = setTimeout(() => { try { bridge.adBreak(lastWhere); } catch (_) {} }, 1500);
+    timer = setTimeout(() => { try { bridge.adBreak(window.PhotoSokLang ? window.PhotoSokLang.t(lastWhere) : lastWhere); } catch (_) {} }, 1500);
   }
   // ---- 보상형: 광고 한 편 보고 24시간 광고 없이 ----
   const until = () => { try { return Number(bridge.adFreeUntil()) || 0; } catch (_) { return 0; } };

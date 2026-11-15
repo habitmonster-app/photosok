@@ -39,9 +39,9 @@ enum Files {
         return pending.removeValue(forKey: id)
     }
 
-    /// 사진 → 사진 앱, PDF·ZIP 등 → 파일 앱 "나의 iPhone → 사진집사". 결과는 웹이 읽는 JSON 글자.
+    /// 사진 → 사진 앱, PDF·ZIP 등 → 파일 앱 "나의 iPhone(iPad) → 사진집사". 안내 글은 Lang 언어로. 결과는 웹이 읽는 JSON 글자.
     static func save(id: String, mime: String, done: @escaping (String) -> Void) {
-        guard let file = take(id) else { return done(json(["status": "failed", "message": "저장할 파일이 없어요. 다시 처리해주세요."])) }
+        guard let file = take(id) else { return done(json(["status": "failed", "message": Lang.t("저장할 파일이 없어요. 다시 처리해주세요.", "Nothing to save. Please process the file again.")])) }
         if mime.hasPrefix("image/") {
             saveToPhotos(file, done: done)
         } else {
@@ -49,9 +49,9 @@ enum Files {
                 let docs = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
                 let dest = unique(docs.appendingPathComponent(file.lastPathComponent))
                 try FileManager.default.moveItem(at: file, to: dest)
-                done(json(["status": "saved", "where": "파일 앱의 '나의 iPhone → 사진집사' 폴더"]))
+                done(json(["status": "saved", "where": Lang.t("파일 앱의 '나의 \(Lang.deviceName) → 사진집사' 폴더", "Files › On My \(Lang.deviceName) › Photo Butler")]))
             } catch {
-                done(json(["status": "failed", "message": "저장하지 못했어요. 저장 공간을 확인하고 다시 시도해주세요."]))
+                done(json(["status": "failed", "message": Lang.t("저장하지 못했어요. 저장 공간을 확인하고 다시 시도해주세요.", "Couldn't save. Check your storage space and try again.")]))
             }
         }
     }
@@ -60,7 +60,7 @@ enum Files {
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
             guard status == .authorized || status == .limited else {
                 DispatchQueue.main.async {
-                    done(json(["status": "failed", "message": "사진 앱에 저장하려면 설정 → 사진집사 → 사진에서 '사진 추가만'을 허용해주세요."]))
+                    done(json(["status": "failed", "message": Lang.t("사진 앱에 저장하려면 설정 → 사진집사 → 사진에서 '사진 추가만'을 허용해주세요.", "To save to Photos, allow 'Add Photos Only' in Settings › Photo Butler › Photos.")]))
                 }
                 return
             }
@@ -71,8 +71,8 @@ enum Files {
                 PHAssetCreationRequest.forAsset().addResource(with: .photo, fileURL: file, options: options)
             }) { ok, _ in
                 DispatchQueue.main.async {
-                    done(ok ? json(["status": "saved", "where": "사진 앱"])
-                            : json(["status": "failed", "message": "사진 앱에 저장하지 못했어요. 다시 시도해주세요."]))
+                    done(ok ? json(["status": "saved", "where": Lang.t("사진 앱", "Photos")])
+                            : json(["status": "failed", "message": Lang.t("사진 앱에 저장하지 못했어요. 다시 시도해주세요.", "Couldn't save to Photos. Please try again.")]))
                 }
             }
         }

@@ -93,6 +93,7 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
         case "append": reply(Files.json(Files.append(id: str(0), base64: str(1))))
         case "save": Files.save(id: str(0), mime: str(1)) { result in reply(Files.json(result)) }
         case "share": reply(Files.json(share(idsJson: str(0))))
+        case "setLang": Lang.current = str(0) == "en" ? "en" : "ko"; reply(nil)
         case "setTheme": applyTheme(str(0) == "light" ? .light : .dark); reply(nil)
         case "takeShared": reply(Files.json("[]"))
         case "setBanner": ads.bannerWanted = (args.first as? Bool) ?? true; ads.applyBannerVisibility(); reply(nil)
@@ -109,7 +110,7 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
     private func share(idsJson: String) -> String {
         let ids = (try? JSONSerialization.jsonObject(with: Data(idsJson.utf8))) as? [String] ?? []
         let urls = ids.compactMap { Files.take($0) }
-        guard !urls.isEmpty else { return Files.json(["status": "failed", "message": "보낼 파일이 없어요."]) }
+        guard !urls.isEmpty else { return Files.json(["status": "failed", "message": Lang.t("보낼 파일이 없어요.", "Nothing to send.")]) }
         DispatchQueue.main.async {
             let sheet = UIActivityViewController(activityItems: urls, applicationActivities: nil)
             sheet.popoverPresentationController?.sourceView = self.view
@@ -133,21 +134,21 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
         }
         let alert = UIAlertController(title: nil, message: prompt, preferredStyle: .alert)
         alert.addTextField { $0.text = defaultText }
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel) { _ in completionHandler(nil) })
-        alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in completionHandler(alert.textFields?.first?.text) })
+        alert.addAction(UIAlertAction(title: Lang.t("취소", "Cancel"), style: .cancel) { _ in completionHandler(nil) })
+        alert.addAction(UIAlertAction(title: Lang.t("확인", "OK"), style: .default) { _ in completionHandler(alert.textFields?.first?.text) })
         topController.present(alert, animated: true)
     }
 
     func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in completionHandler() })
+        alert.addAction(UIAlertAction(title: Lang.t("확인", "OK"), style: .default) { _ in completionHandler() })
         topController.present(alert, animated: true)
     }
 
     func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel) { _ in completionHandler(false) })
-        alert.addAction(UIAlertAction(title: "확인", style: .default) { _ in completionHandler(true) })
+        alert.addAction(UIAlertAction(title: Lang.t("취소", "Cancel"), style: .cancel) { _ in completionHandler(false) })
+        alert.addAction(UIAlertAction(title: Lang.t("확인", "OK"), style: .default) { _ in completionHandler(true) })
         topController.present(alert, animated: true)
     }
 

@@ -93,6 +93,10 @@ class MainActivity : Activity() {
     private lateinit var web: WebView
     private lateinit var adBox: FrameLayout
     private lateinit var root: LinearLayout
+    /** 앱이 직접 그리는 글자(저장 카드 등)의 언어. 웹 화면이 PhotoSokNative.setLang으로 알려 준다. 처음 값은 폰 언어. */
+    @Volatile private var uiLang: String = if (java.util.Locale.getDefault().language == "ko") "ko" else "en"
+    private fun tr(ko: String, en: String): String = if (uiLang == "en") en else ko
+
     private var adView: AdView? = null
     private var nativeAd: NativeAd? = null
     private var rewarded: RewardedAd? = null
@@ -405,7 +409,7 @@ class MainActivity : Activity() {
         } catch (e: Exception) {
             contentResolver.delete(uri, null, null); throw e
         }
-        val where = if (isImage) "갤러리의 '사진집사' 앨범" else "'내 파일 → 다운로드 → 사진집사' 폴더"
+        val where = if (isImage) tr("갤러리의 '사진집사' 앨범", "the '사진집사' album in Gallery") else tr("'내 파일 → 다운로드 → 사진집사' 폴더", "My Files › Download › 사진집사")
         return JSONObject().put("status", "saved").put("where", where)
     }
 
@@ -639,14 +643,14 @@ class MainActivity : Activity() {
             setPadding(dp(20), dp(18), dp(20), dp(18))
             background = GradientDrawable().apply { setColor(bg); setCornerRadii(floatArrayOf(dp(24).toFloat(), dp(24).toFloat(), dp(24).toFloat(), dp(24).toFloat(), 0f, 0f, 0f, 0f)) }
         }
-        box.addView(TextView(this).apply { text = "저장했어요"; setTextColor(fg); textSize = 20f; setTypeface(typeface, Typeface.BOLD) })
-        if (where.isNotBlank()) box.addView(TextView(this).apply { text = "${where}에서 확인하세요."; setTextColor(muted); textSize = 14f; setPadding(0, dp(4), 0, dp(14)) })
+        box.addView(TextView(this).apply { text = tr("저장했어요", "Saved"); setTextColor(fg); textSize = 20f; setTypeface(typeface, Typeface.BOLD) })
+        if (where.isNotBlank()) box.addView(TextView(this).apply { text = tr("${where}에서 확인하세요.", "Find it in $where."); setTextColor(muted); textSize = 14f; setPadding(0, dp(4), 0, dp(14)) })
 
         // 네이티브 광고: 아이콘·제목·설명·이미지·버튼, 그리고 "광고" 표시
         val adView = NativeAdView(this)
         val inner = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(12), dp(14), dp(14)); background = rounded(if (dark) 0xFF24282B.toInt() else 0xFFF3F4F2.toInt(), 16) }
         val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        val badge = TextView(this).apply { text = "광고"; setTextColor(0xFF111111.toInt()); textSize = 11f; setTypeface(typeface, Typeface.BOLD); setPadding(dp(6), dp(1), dp(6), dp(1)); background = rounded(lime, 6) }
+        val badge = TextView(this).apply { text = tr("광고", "Ad"); setTextColor(0xFF111111.toInt()); textSize = 11f; setTypeface(typeface, Typeface.BOLD); setPadding(dp(6), dp(1), dp(6), dp(1)); background = rounded(lime, 6) }
         val icon = ImageView(this).apply { layoutParams = LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginStart = dp(8); marginEnd = dp(10) } }
         val headline = TextView(this).apply { setTextColor(fg); textSize = 15f; setTypeface(typeface, Typeface.BOLD); maxLines = 2; layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f) }
         top.addView(badge); top.addView(icon); top.addView(headline)
@@ -662,11 +666,11 @@ class MainActivity : Activity() {
         adView.bodyView = body; body.text = ad.body ?: ""; body.visibility = if (ad.body.isNullOrBlank()) View.GONE else View.VISIBLE
         adView.iconView = icon; ad.icon?.drawable?.let { icon.setImageDrawable(it) } ?: run { icon.visibility = View.GONE }
         adView.mediaView = media; ad.mediaContent?.let { media.setMediaContent(it) } ?: run { media.visibility = View.GONE }
-        adView.callToActionView = cta; cta.text = ad.callToAction ?: "자세히 보기"; cta.visibility = if (ad.callToAction.isNullOrBlank()) View.GONE else View.VISIBLE
+        adView.callToActionView = cta; cta.text = ad.callToAction ?: tr("자세히 보기", "Learn more"); cta.visibility = if (ad.callToAction.isNullOrBlank()) View.GONE else View.VISIBLE
         adView.setNativeAd(ad)
         box.addView(adView)
 
-        val close = Button(this).apply { text = "닫기"; isAllCaps = false; setTextColor(fg); textSize = 15f; background = ColorDrawable(Color.TRANSPARENT); layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)).apply { topMargin = dp(8) } }
+        val close = Button(this).apply { text = tr("닫기", "Close"); isAllCaps = false; setTextColor(fg); textSize = 15f; background = ColorDrawable(Color.TRANSPARENT); layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48)).apply { topMargin = dp(8) } }
         close.setOnClickListener { dialog.dismiss() }
         box.addView(close)
 
@@ -733,7 +737,7 @@ class MainActivity : Activity() {
             file.parentFile?.deleteRecursively()
             result.toString()
         } catch (e: Exception) {
-            JSONObject().put("status", "failed").put("message", "저장하지 못했어요. 저장 공간을 확인하고 다시 시도해주세요.").toString()
+            JSONObject().put("status", "failed").put("message", tr("저장하지 못했어요. 저장 공간을 확인하고 다시 시도해주세요.", "Couldn't save. Check your storage space and try again.")).toString()
         }
 
         @JavascriptInterface
@@ -753,11 +757,14 @@ class MainActivity : Activity() {
             send.type = type
             send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             send.clipData = ClipData.newRawUri("files", uris[0]).apply { uris.drop(1).forEach { addItem(ClipData.Item(it)) } }
-            runOnUiThread { startActivity(Intent.createChooser(send, "보낼 곳 고르기")) }
+            runOnUiThread { startActivity(Intent.createChooser(send, tr("보낼 곳 고르기", "Send to"))) }
             JSONObject().put("status", "shared").toString()
         } catch (e: Exception) {
-            JSONObject().put("status", "failed").put("message", "공유 창을 열지 못했어요.").toString()
+            JSONObject().put("status", "failed").put("message", tr("공유 창을 열지 못했어요.", "Couldn't open the share menu.")).toString()
         }
+
+        @JavascriptInterface
+        fun setLang(code: String) { uiLang = if (code == "en") "en" else "ko" }
 
         @JavascriptInterface
         fun setTheme(theme: String) {
