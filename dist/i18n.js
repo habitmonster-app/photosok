@@ -79,9 +79,11 @@
     } finally { busy = false; }
   });
 
-  const titles = { ko: document.title, en: 'PhotoSok · Shrink photos & PDFs on your phone' };
+  const titles = { ko: document.title, en: 'Photo Butler · Shrink photos & PDFs on your phone' };
   function apply() {
     document.documentElement.lang = lang;
+    // 앱(아이폰·안드로이드)의 저장 카드·확인 창도 같은 언어로
+    try { if (window.PhotoSokNative && typeof window.PhotoSokNative.setLang === 'function') window.PhotoSokNative.setLang(lang); } catch (_) {}
     document.title = titles[lang];
     busy = true; try { walk(document.body); } finally { busy = false; }
     const name = document.getElementById('pdfName');

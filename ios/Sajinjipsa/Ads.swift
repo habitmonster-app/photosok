@@ -182,10 +182,10 @@ enum SavedSheet {
         stack.spacing = 0
         stack.translatesAutoresizingMaskIntoConstraints = false
 
-        let title = label("저장했어요", size: 20, weight: .bold, color: theme.text)
+        let title = label(Lang.t("저장했어요", "Saved"), size: 20, weight: .bold, color: theme.text)
         stack.addArrangedSubview(title)
         if !place.isEmpty {
-            let sub = label("\(place)에서 확인하세요.", size: 14, weight: .regular, color: theme.muted)
+            let sub = label(Lang.t("\(place)에서 확인하세요.", "Find it in \(place)."), size: 14, weight: .regular, color: theme.muted)
             stack.setCustomSpacing(4, after: title)
             stack.addArrangedSubview(sub)
             stack.setCustomSpacing(14, after: sub)
@@ -209,7 +209,7 @@ enum SavedSheet {
         top.alignment = .center
         top.spacing = 8
         let badge = PaddedLabel()
-        badge.text = "광고"
+        badge.text = Lang.t("광고", "Ad")
         badge.font = .systemFont(ofSize: 11, weight: .bold)
         badge.textColor = UIColor(red: 0x11 / 255, green: 0x11 / 255, blue: 0x11 / 255, alpha: 1)
         badge.backgroundColor = Theme.lime
@@ -268,7 +268,7 @@ enum SavedSheet {
         stack.addArrangedSubview(adView)
 
         let close = UIButton(type: .system)
-        close.setTitle("닫기", for: .normal)
+        close.setTitle(Lang.t("닫기", "Close"), for: .normal)
         close.setTitleColor(theme.text, for: .normal)
         close.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
         close.heightAnchor.constraint(equalToConstant: 48).isActive = true

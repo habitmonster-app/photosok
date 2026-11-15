@@ -12,7 +12,7 @@
     try { return JSON.parse(r); } catch (_) { return undefined; }
   };
   const api = {};
-  ['begin', 'append', 'save', 'share', 'setTheme', 'takeShared', 'setBanner', 'adBreak', 'showRewarded',
+  ['begin', 'append', 'save', 'share', 'setLang', 'setTheme', 'takeShared', 'setBanner', 'adBreak', 'showRewarded',
    'adFreeUntil', 'adsAvailable', 'adPrivacyRequired', 'showAdPrivacy'].forEach(m => { api[m] = (...a) => call(m, a); });
   window.PhotoSokNative = Object.freeze(api);
   document.documentElement.classList.add('ios-app');

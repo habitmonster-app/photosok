@@ -1,9 +1,22 @@
 'use strict';
-// English vocabulary for PhotoSok. Keys are the Korean screen text exactly as rendered.
+// English vocabulary for Photo Butler (사진집사). Keys are the Korean screen text exactly as rendered.
 // EXACT: whole text node / attribute. RULES: patterns for text with numbers or names.
 // PHRASES: last-resort fragment swaps for anything a rule missed.
 window.PhotoSokEN = {
   EXACT: {
+    // 앱(아이폰·안드로이드)이 돌려주는 저장 위치와 안내
+    "사진 앱": "Photos",
+    "기기": "your device",
+    "파일 앱의 '나의 iPhone → 사진집사' 폴더": "Files › On My iPhone › Photo Butler",
+    "'내 파일 → 다운로드 → 사진집사' 폴더": "the My Files › Download › 사진집사 folder",
+    "저장할 파일이 없어요. 다시 처리해주세요.": "Nothing to save. Please process the file again.",
+    "저장하지 못했어요. 저장 공간을 확인하고 다시 시도해주세요.": "Couldn't save. Check your storage space and try again.",
+    "사진 앱에 저장하려면 설정 → 사진집사 → 사진에서 '사진 추가만'을 허용해주세요.": "To save to Photos, allow 'Add Photos Only' in Settings › Photo Butler › Photos.",
+    "사진 앱에 저장하지 못했어요. 다시 시도해주세요.": "Couldn't save to Photos. Please try again.",
+    "보낼 파일이 없어요.": "Nothing to send.",
+    "사진 앱 저장": "Save to Photos", "사진 앱에도 저장": "Also save to Photos",
+    "사진 앱에 저장하지 못했어요.": "Couldn't save to Photos.",
+    "이용약관": "Terms of use",
     "보내기": "Send",
     "자세히 설정하기": "More settings",
     "네 모서리 보정": "Four-corner fix",
@@ -575,13 +588,15 @@ window.PhotoSokEN = {
     [/^(\d+)장 선택$/, '$1 selected'],
     [/^완료 · (\d+)장$/, 'Done · $1'],
     [/^(\d+)장 모두 갤러리에 저장$/, 'Save all $1 to gallery'],
+    [/^(\d+)장 모두 사진 앱에 저장$/, 'Save all $1 to Photos'],
+    [/^(\d+)장을 담았어요\. 사진 앱에도 저장했어요\.$/, 'Added $1 photo(s). Also saved to Photos.'],
     [/^(\d+)장 모두 저장 \(ZIP\)$/, 'Save all $1 (ZIP)'],
     [/^(\d+)장 처리 완료\. 비교 후 저장해주세요\.$/, '$1 done. Compare, then save.'],
     [/^(\d+) \/ (\d+)장 처리 중$/, 'Processing $1 of $2'],
     [/^(\d+)페이지를 추가했어요\.$/, 'Added $1.'],
-    [/^(\d+)장을 (.+)에 저장했어요\.$/, 'Saved $1 to $2.'],
+    [/^(\d+)장을 (.+)에 저장했어요\.$/, (m, n, w) => 'Saved ' + n + ' to ' + window.PhotoSokEN.core(w) + '.'],
     [/^(\d+)장 저장, (\d+)장은 저장하지 못했어요\.$/, 'Saved $1; $2 failed.'],
-    [/^(.+)에 저장했어요\.$/, 'Saved to $1.'],
+    [/^(.+)에 저장했어요\.$/, (m, w) => 'Saved to ' + window.PhotoSokEN.core(w) + '.'],
     [/^갤러리의 '사진집사' 앨범$/, "the '사진집사' album"],
     [/^(.+) · 이미 목표 용량 이하예요$/, '$1 · already under the target'],
     [/^(.+) 이하로 줄일 예정( · (\d+)×(\d+))?$/, (m, a, b, w, h) => 'Will shrink to under ' + a + (b ? ' · ' + w + '×' + h : '')],

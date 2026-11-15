@@ -1,4 +1,6 @@
 'use strict';
+// 아이폰은 '갤러리' 대신 '사진 앱'
+const CAM_GALLERY = document.documentElement.classList.contains('ios-app') ? '사진 앱' : '갤러리';
 // 증명사진 찍기: 카메라 화면 위에 얼굴 윤곽 가이드를 그리고, 얼굴이 가이드에 맞는지 알려준다.
 // 찍은 사진은 기기 안에서만 쓰고, 담은 뒤 규격 자동 맞춤이 그대로 적용된다.
 // 카메라를 쓸 수 없으면 기본 카메라 앱(파일 선택의 촬영)으로 넘어간다.
@@ -28,7 +30,7 @@
       <div class="cam-stage" id="camStage"><video id="camVideo" playsinline muted autoplay></video><svg id="camGuide" aria-hidden="true"></svg><p class="cam-status" id="camStatus">카메라를 켜는 중…</p><p class="cam-count" id="camCount" hidden></p><div class="cam-flash" id="camFlash"></div></div>
       <div class="cam-opts" id="camOpts" hidden>
         <div class="cam-chips" role="group" aria-label="비율">${Object.keys(RATIOS).map(k => `<button type="button" data-camratio="${k}">${k === 'full' ? '전체' : k}</button>`).join('')}</div>
-        <div class="cam-chips"><button type="button" id="camTimer" aria-label="타이머">타이머 끔</button><button type="button" id="camGridBtn" aria-label="격자">격자</button><button type="button" id="camGallery" aria-label="갤러리에도 저장">갤러리 저장</button></div>
+        <div class="cam-chips"><button type="button" id="camTimer" aria-label="타이머">타이머 끔</button><button type="button" id="camGridBtn" aria-label="격자">격자</button><button type="button" id="camGallery" aria-label="${CAM_GALLERY}에도 저장">${CAM_GALLERY} 저장</button></div>
       </div>
       <p class="cam-tip" id="camTip">밝은 곳에서 단색 벽을 뒤에 두고, 정면을 보고 찍으세요. 안경 반사와 그림자를 피하세요.</p>
       <div class="cam-bar"><button type="button" class="icon-button cam-flip" id="camFlip" aria-label="앞뒤 카메라 바꾸기"><svg><use href="#i-convert"/></svg></button><button type="button" class="cam-shutter" id="camShot" aria-label="찍기"></button><span class="cam-spacer" id="camSpacer"></span><button type="button" class="cam-done" id="camDone" hidden><img id="camThumb" alt=""><span>완료</span></button></div>`;
@@ -175,14 +177,14 @@
     const file = new File([blob], name, { type: 'image/jpeg', lastModified: Date.now() });
     shots.push(file);
     $('camThumb').src = thumb; $('camDone').hidden = false; $('camDone').querySelector('span').textContent = '완료 ' + shots.length;
-    if (toGallery) { try { const r = await FileDelivery.save(blob, name); if (r.status === 'failed') toast(r.message || '갤러리에 저장하지 못했어요.', true); } catch (_) {} }
+    if (toGallery) { try { const r = await FileDelivery.save(blob, name); if (r.status === 'failed') toast(r.message || CAM_GALLERY + '에 저장하지 못했어요.', true); } catch (_) {} }
   }
   async function flushShots() {
     const list = shots; shots = [];
     if (!list.length) return;
     await addFiles(list);
     window.PhotoSokScreen?.goWork('사진 찍기');
-    toast(list.length + '장을 담았어요.' + (toGallery ? ' 갤러리에도 저장했어요.' : ''));
+    toast(list.length + '장을 담았어요.' + (toGallery ? ' ' + CAM_GALLERY + '에도 저장했어요.' : ''));
   }
 
   function open(opts = {}) {
