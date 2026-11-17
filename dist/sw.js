@@ -1,7 +1,7 @@
 'use strict';
 // 사진집사 서비스 워커: 앱을 설치형으로 쓰고, 인터넷 없이도 열리게 한다.
 // 사용자 파일은 외부로 보내지 않는다. 공유로 받은 파일도 이 기기 캐시에 잠깐 두었다가 앱이 꺼내면 지운다.
-const VERSION = 'v1.30.5';
+const VERSION = 'v1.30.6';
 const SHELL = 'photosok-shell-' + VERSION;
 const TOOLS = 'photosok-tools-' + VERSION;
 const INBOX = 'photosok-share-inbox';
@@ -11,7 +11,7 @@ const SHELL_FILES = [
   'style.css', 'document-editor.css', 'file-delivery.css',
   'errors.js', 'compress.js', 'crop.js', 'text.js', 'decorate.js', 'face.js', 'mystickers.js', 'stickermaker.js', 'idphoto.js', 'mask.js', 'print.js', 'camera.js', 'sharpen.js', 'retouch.js', 'sheet.js', 'cleanup.js', 'ads.js', 'onboard.js', 'i18n-en.js', 'i18n.js', 'pdf.js', 'pdf-tools.js', 'heic-support.js', 'heic-worker.js',
   'document-editor.js', 'file-delivery.js', 'ui-copy.js', 'app.js', 'submission.js', 'pwa.js', 'native.js', 'home.js', 'quick.js', 'fonts/PretendardVariable-subset.woff2',
-  'assets/brand-mark.svg', 'assets/file-desk.svg', 'assets/inbox.svg',
+  'sounds/shutter.wav', 'assets/brand-mark.svg', 'assets/file-desk.svg', 'assets/inbox.svg',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png'
 ].concat(['love', 'animal', 'party', 'food', 'travel', 'weather', 'word'].flatMap(p => Array.from({ length: 16 }, (_, i) => `stickers/${p}/${i + 1}.webp`)));
 // 큰 도구 파일: 설치할 때 미리 받아 두면 첫 PDF·HEIC 작업도 인터넷 없이 된다.

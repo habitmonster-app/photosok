@@ -51,6 +51,7 @@ import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Base64
 import android.webkit.JavascriptInterface
+import android.media.MediaActionSound
 import android.window.OnBackInvokedDispatcher
 import android.webkit.ValueCallback
 import android.webkit.PermissionRequest
@@ -91,6 +92,7 @@ class MainActivity : Activity() {
     }
 
     private lateinit var web: WebView
+    private val shutterSound by lazy { MediaActionSound().apply { load(MediaActionSound.SHUTTER_CLICK) } }
     private lateinit var adBox: FrameLayout
     private lateinit var root: LinearLayout
     /** 앱이 직접 그리는 글자(저장 카드 등)의 언어. 웹 화면이 PhotoSokNative.setLang으로 알려 준다. 처음 값은 폰 언어. */
@@ -713,6 +715,12 @@ class MainActivity : Activity() {
     }
 
     inner class Bridge {
+        // 사진을 찍을 때마다 시스템 카메라 셔터음을 낸다(끄는 설정 없음).
+        @JavascriptInterface
+        fun shutter() {
+            runOnUiThread { try { shutterSound.play(MediaActionSound.SHUTTER_CLICK) } catch (_: Exception) {} }
+        }
+
         @JavascriptInterface
         fun begin(name: String, mime: String): String {
             val id = UUID.randomUUID().toString()

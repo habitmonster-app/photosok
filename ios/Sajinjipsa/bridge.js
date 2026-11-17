@@ -13,7 +13,7 @@
   };
   const api = {};
   ['begin', 'append', 'save', 'share', 'setLang', 'setTheme', 'takeShared', 'setBanner', 'adBreak', 'showRewarded',
-   'adFreeUntil', 'adsAvailable', 'adPrivacyRequired', 'showAdPrivacy'].forEach(m => { api[m] = (...a) => call(m, a); });
+   'adFreeUntil', 'adsAvailable', 'adPrivacyRequired', 'showAdPrivacy', 'shutter'].forEach(m => { api[m] = (...a) => call(m, a); });
   window.PhotoSokNative = Object.freeze(api);
   document.documentElement.classList.add('ios-app');
   // 공간 확보(갤러리 정리)는 아직 안드로이드 전용이라 아이폰에서는 숨긴다.
