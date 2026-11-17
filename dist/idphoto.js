@@ -85,7 +85,7 @@
   let bgDialog = null, bgTargets = [];
   function chooseBg(items) {
     if (state.busy) return;
-    if (SPECS[state.spec]?.noRetouch) { toast('여권 사진은 디지털 보정이 금지라 배경을 바꿀 수 없어요.', true); return; }
+    if (SPECS[state.spec]?.noRetouch) { toast('3.5×4.5cm 크기에서는 배경을 바꿀 수 없어요.', true); return; }
     bgTargets = items.filter(i => i && i.sourceType !== 'pdf');
     if (!bgTargets.length) { toast('먼저 사진을 골라주세요.', true); return; }
     if (!bgDialog) {
@@ -93,7 +93,7 @@
       bgDialog.id = 'bgDialog'; bgDialog.className = 'bg-dialog';
       bgDialog.innerHTML = `<div class="dialog-head"><h2>배경색 바꾸기</h2><button type="button" class="icon-button" id="bgClose" aria-label="배경색 닫기"><svg><use href="#i-close"/></svg></button></div>
         <div class="bg-swatches">${BG.map((b, i) => `<button type="button" data-bg="${i}"><i style="background:${b.color}"></i><span>${b.name}</span></button>`).join('')}</div>
-        <p class="mask-note">사람만 남기고 배경을 고른 색으로 바꿔요. 자격증·이력서처럼 배경색 제한이 느슨한 곳에 쓰세요. 제출처가 정한 배경색이 있으면 그 색을 고르세요. 여권 사진에는 쓸 수 없어요.</p>`;
+        <p class="mask-note">사람만 남기고 배경을 고른 색으로 바꿔요. 프로필·이력서 사진처럼 배경색이 자유로운 곳에 쓰세요. 3.5×4.5cm 크기에서는 쓸 수 없어요.</p>`;
       document.body.append(bgDialog);
       $('bgClose').onclick = () => bgDialog.close();
       bgDialog.querySelectorAll('[data-bg]').forEach(b => b.onclick = async () => {
@@ -107,7 +107,7 @@
 
   async function whiten(item, bg = BG[0]) {
     if (state.busy || !item) return;
-    if (SPECS[state.spec]?.noRetouch) { toast('여권 사진은 디지털 보정이 금지라 배경을 바꿀 수 없어요.', true); return; }
+    if (SPECS[state.spec]?.noRetouch) { toast('3.5×4.5cm 크기에서는 배경을 바꿀 수 없어요.', true); return; }
     state.busy = true; render();
     try {
       // 이미 배경을 바꾼 사진은 원본에서 다시 바꾼다(가장자리가 덜 뭉개지게). 가리기를 한 뒤면 지금 사진에서.

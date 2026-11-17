@@ -11,6 +11,19 @@ const CAM_GALLERY = document.documentElement.classList.contains('ios-app') ? '�
   let mode = 'id', ratio = '3:4', delay = 0, grid = true, shots = [], toGallery = false, counting = false;
   const RATIOS = { '3:4': [3, 4], '1:1': [1, 1], '9:16': [9, 16], 'full': null };
 
+  // 찍을 때마다 셔터음과 화면 번쩍임으로 촬영 중임을 알린다. 끄는 설정은 없다(App Store 지침 2.5.14).
+  let shutterAudio = null;
+  function shutterFx() {
+    const f = $('camFlash'); if (f) { f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
+    const native = window.PhotoSokNative;
+    if (native && typeof native.shutter === 'function') { try { native.shutter(); return; } catch (_) {} }
+    try {
+      shutterAudio = shutterAudio || new Audio('sounds/shutter.wav');
+      shutterAudio.currentTime = 0; shutterAudio.volume = 1;
+      shutterAudio.play()?.catch?.(() => {});
+    } catch (_) {}
+  }
+
   function frameSize() {
     if (mode === 'free') {
       const r = RATIOS[ratio], v = $('camVideo');
@@ -146,6 +159,7 @@ const CAM_GALLERY = document.documentElement.classList.contains('ios-app') ? '�
   async function shoot() {
     const v = $('camVideo');
     if (!stream || !v.videoWidth) return;
+    shutterFx();
     // 담을 때는 화면 영역보다 조금 넉넉하게: 전체 프레임을 그대로 담고 자동 맞춤에 맡긴다.
     const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight;
     c.getContext('2d').drawImage(v, 0, 0);
@@ -153,7 +167,7 @@ const CAM_GALLERY = document.documentElement.classList.contains('ios-app') ? '�
     c.width = c.height = 1;
     if (!blob) { toast('사진을 찍지 못했어요. 다시 시도해주세요.', true); return; }
     const d = new Date(), p = n => String(n).padStart(2, '0');
-    const name = `사진집사_증명_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.jpg`;
+    const name = `사진집사_규격_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.jpg`;
     dialog.close();
     await addFiles([new File([blob], name, { type: 'image/jpeg', lastModified: Date.now() })]);
     toast('찍은 사진을 담았어요. 얼굴 기준으로 맞춰요.');
@@ -169,7 +183,7 @@ const CAM_GALLERY = document.documentElement.classList.contains('ios-app') ? '�
       c.hidden = true; counting = false;
     }
     const cv = grab(0); if (!cv) return;
-    const f = $('camFlash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+    shutterFx();
     const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', .93)); 
     const thumb = cv.toDataURL('image/jpeg', .5); cv.width = cv.height = 1;
     if (!blob) { toast('사진을 찍지 못했어요. 다시 시도해주세요.', true); return; }

@@ -1,5 +1,6 @@
 import UIKit
 import WebKit
+import AVFoundation
 
 /// 앱 화면: 위는 웹앱, 아래는 광고 배너 자리(웹 화면을 덮지 않음).
 final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
@@ -103,7 +104,29 @@ final class WebViewController: UIViewController, WKUIDelegate, WKNavigationDeleg
         case "adsAvailable": reply(Files.json(ads.started))
         case "adPrivacyRequired": reply(Files.json(ads.privacyRequired))
         case "showAdPrivacy": reply(nil); DispatchQueue.main.async { self.ads.showPrivacy() }
+        case "shutter": reply(nil); DispatchQueue.main.async { self.playShutter() }
         default: reply(nil)
+        }
+    }
+
+    // 사진을 찍을 때마다 셔터음을 낸다. 무음 스위치·설정과 상관없이 항상 울리고, 끄는 방법은 없다
+    // (App Store 심사 지침 2.5.14: 촬영 중임을 주변에 알려야 함).
+    private var shutterPlayer: AVAudioPlayer?
+    private func playShutter() {
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+        try? session.setActive(true)
+        if shutterPlayer == nil {
+            let url = Bundle.main.resourceURL!.appendingPathComponent("www/sounds/shutter.wav")
+            shutterPlayer = try? AVAudioPlayer(contentsOf: url)
+            shutterPlayer?.prepareToPlay()
+        }
+        if let p = shutterPlayer {
+            p.volume = 1
+            p.currentTime = 0
+            p.play()
+        } else {
+            AudioServicesPlaySystemSound(1108) // 파일을 못 읽으면 시스템 카메라 셔터음
         }
     }
 
