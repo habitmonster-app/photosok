@@ -533,7 +533,7 @@ window.PhotoSokEN = {
     "가릴 곳을 손가락으로 끌어 네모를 그려주세요. 고른 방법은 다음 네모부터 적용돼요.": "Drag a box over what you want to hide. A new style applies to the next box.",
     "모자이크": "Mosaic",
     "흐리게": "Blur",
-    "주민등록번호·계좌번호처럼 중요한 정보는 검정이 가장 안전해요.": "For ID or account numbers, black is the safest.",
+    "주민등록번호·계좌번호처럼 중요한 정보는 검정이 가장 안전해요.": "For personal or account numbers, black is the safest.",
     "작은 글씨는 모자이크로도 알아볼 수 있어요. 중요한 번호는 검정을 써주세요.": "Small text can still be read through a mosaic. Use black for important numbers.",
     "흐리게는 얼굴이나 배경에 어울려요. 글씨는 검정이 안전해요.": "Blur suits faces and backgrounds. Black is safer for text.",
     "얼굴 찾아 가리기": "Find and hide faces",
