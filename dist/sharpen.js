@@ -64,7 +64,7 @@
       <p class="crop-hint">가운데 선을 끌어서 전과 후를 비교해요.</p>
       <div class="print-opts"><span>세기</span><div class="chip-row" id="sharpLevel">${Object.entries(LEVELS).map(([k, v]) => `<button type="button" data-level="${k}">${v.name}</button>`).join('')}</div></div>
       <label class="check-row"><input type="checkbox" id="sharpNoise" checked><span>자잘한 노이즈 줄이기</span></label>
-      <p class="mask-note">흐릿한 윤곽을 또렷하게 하고 자글자글한 노이즈를 줄여요. 사진은 폰 안에서만 고쳐요. 초점이 크게 나간 사진은 많이 좋아지지 않을 수 있어요. 여권 사진처럼 보정이 금지된 곳에는 쓰지 마세요.</p>
+      <p class="mask-note">흐릿한 윤곽을 또렷하게 하고 자글자글한 노이즈를 줄여요. 사진은 폰 안에서만 고쳐요. 초점이 크게 나간 사진은 많이 좋아지지 않을 수 있어요. 보정한 사진을 받지 않는 곳에는 쓰지 마세요.</p>
       <div class="crop-actions"><button type="button" class="small-button" id="sharpApply">적용만</button><button type="button" class="primary" id="sharpSave">선명하게 저장</button></div>`;
     document.body.append(dialog);
     $('sharpClose').onclick = () => dialog.close();
@@ -100,7 +100,7 @@
 
   async function open(item) {
     if (!item || state.busy) return;
-    if (SPECS[state.spec]?.noRetouch) { toast('여권 사진은 디지털 보정이 금지라 선명하게를 쓸 수 없어요.', true); return; }
+    if (SPECS[state.spec]?.noRetouch) { toast('3.5×4.5cm 크기에서는 선명하게를 쓸 수 없어요.', true); return; }
     if (!dialog) build();
     let input;
     try {

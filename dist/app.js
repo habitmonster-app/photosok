@@ -9,9 +9,9 @@ function button(text,fn){const b=document.createElement('button');b.textContent=
 function fmt(n){return PhotoEngine.formatBytes(n);}
 // 제출용 사진 규격: 공식 안내에 나온 cm·형식·용량만 사용. 픽셀은 300dpi 환산값.
 const SPECS={
- 'qnet-half':{w:354,h:472,target:200000,head:{ratio:.62,top:.12,cmH:4},source:'출처: 큐넷 사진등록 안내 (반명함 3×4cm, JPG, 200KB 이하, 여백 없이). 픽셀 354×472는 300dpi로 환산한 값이에요. 제출 전 큐넷 안내를 다시 확인해주세요.'},
- 'qnet-id':{w:295,h:413,target:200000,head:{ratio:.62,top:.12,cmH:3.5},source:'출처: 큐넷 사진등록 안내 (증명사진 2.5×3.5cm, JPG, 200KB 이하, 여백 없이). 픽셀 295×413은 300dpi로 환산한 값이에요. 제출 전 큐넷 안내를 다시 확인해주세요.'},
- 'passport':{w:413,h:531,target:null,head:{ratio:.756,top:.09,cmH:4.5,range:[3.2,3.6]},noRetouch:true,source:'출처: 출입국·외국인정책본부 표준사진 안내, 지자체 여권사진 규격 안내 (3.5×4.5cm, 흰색 배경, 테두리 없음, 정수리~턱 길이 규정 있음). 픽셀 413×531은 300dpi로 환산한 값이에요. 얼굴 위치·크기는 자동으로 맞추지만 머리 위치는 추정값이에요. 여권 사진은 디지털 보정이 금지라 배경 바꾸기는 쓰지 마세요. 제출처 안내를 꼭 다시 확인해주세요.'}
+ 'qnet-half':{w:354,h:472,target:200000,head:{ratio:.62,top:.12,cmH:4},source:'3×4cm, JPG, 200KB 이하, 여백 없이. 픽셀 354×472는 300dpi로 환산한 값이에요. 사진 크기만 맞춰 주니, 제출 전에 제출처 안내를 꼭 확인해주세요.'},
+ 'qnet-id':{w:295,h:413,target:200000,head:{ratio:.62,top:.12,cmH:3.5},source:'2.5×3.5cm, JPG, 200KB 이하, 여백 없이. 픽셀 295×413은 300dpi로 환산한 값이에요. 사진 크기만 맞춰 주니, 제출 전에 제출처 안내를 꼭 확인해주세요.'},
+ 'passport':{w:413,h:531,target:null,head:{ratio:.756,top:.09,cmH:4.5,range:[3.2,3.6]},noRetouch:true,source:'3.5×4.5cm, 흰색 배경, 테두리 없음. 픽셀 413×531은 300dpi로 환산한 값이에요. 얼굴 위치·크기는 자동으로 맞추지만 머리 위치는 추정값이에요. 이 크기는 보정을 허용하지 않는 곳이 많아 배경 바꾸기·선명하게·잡티 보정을 막아 두었어요. 제출처 안내를 꼭 확인해주세요.'}
 };
 function planText(){if(state.mode!=='compress')return '처리 대기';if(state.quality)return '화질 '+({0.92:'높음',0.8:'중간',0.6:'낮음'}[state.quality]||'')+'으로 줄일 예정';let t=state.target;if(state.custom){const v=Number($('customSize').value);if(Number.isFinite(v)&&v>=10)t=Math.floor(v*1000);}let plan=fmt(t)+' 이하로 줄일 예정';if($('exactSize').checked)plan+=' · '+$('exactWidth').value+'×'+$('exactHeight').value;return plan;}
 function signature(){try{return JSON.stringify(options());}catch{return 'invalid';}}

@@ -119,7 +119,7 @@
         <label class="check-row"><input type="checkbox" id="rtShowMask" checked><span>칠한 곳 표시</span></label>
       </div>
       <div class="deco-adj-actions"><button type="button" class="small-button" id="rtUndo">되돌리기</button><button type="button" class="small-button" id="rtCompare">누르는 동안 원본</button></div>
-      <p class="mask-note">사진은 폰 안에서만 고쳐요. 여권·증명사진처럼 보정이 금지된 곳에는 쓰지 마세요.</p>
+      <p class="mask-note">사진은 폰 안에서만 고쳐요. 보정한 사진을 받지 않는 곳에는 쓰지 마세요.</p>
       <div class="crop-actions"><button type="button" class="small-button" id="rtApply">적용만</button><button type="button" class="primary" id="rtSave">고쳐서 저장</button></div>`;
     document.body.append(dialog);
     const cv = $('rtCanvas');
@@ -190,7 +190,7 @@
 
   async function open(item) {
     if (!item || state.busy) return;
-    if (SPECS[state.spec]?.noRetouch) { toast('여권 사진은 디지털 보정이 금지라 잡티·부분 보정을 쓸 수 없어요.', true); return; }
+    if (SPECS[state.spec]?.noRetouch) { toast('3.5×4.5cm 크기에서는 잡티·부분 보정을 쓸 수 없어요.', true); return; }
     if (!dialog) build();
     try {
       const input = await itemInputFile(item), rotation = item.sourceType === 'pdf' ? 0 : (item.rotation || 0);
